@@ -1,0 +1,295 @@
+# To test with http://editor.swagger.io/
+openapi: 3.0.0
+info:
+  title: Brain API
+  version: 1.0.0
+servers:
+- url: http://46.101.31.69:5000/api
+  description: Dev server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    MissingParam:
+      description: A parameter is missing
+    NotFound:
+      description: Resource not found
+  schemas:
+    AuthUser:
+      description: User schema when returned by an authentication endpoint
+      type: object
+      properties:
+        _id:
+          type: integer
+          description: The user ID.
+        email:
+          type: string
+          description: Email.
+        firstname:
+          type: string
+          description: User's firstname.
+        lastname:
+          type: string
+          description: User's lastname.
+        token:
+          type: string
+          description: Bearer token.
+        createdAt:
+          type: string
+          format: date
+          description: Creation date
+        roles:
+          type: array
+          description: User's Roles.
+          items:
+            type: string
+        squads:
+          type: array
+          description: User's Roles.
+          items:
+            type: string
+    User:
+      description: User schema for a user
+      type: object
+      properties:
+        _id:
+          type: integer
+          description: The user ID.
+        firstname:
+          type: string
+          description: User's firstname.
+        lastname:
+          type: string
+          description: User's lastname.
+    AdminUser:
+      description: User schema when returned on a superadmin endpoint
+      type: object
+      properties:
+        _id:
+          type: integer
+          description: The user ID.
+        firstname:
+          type: string
+          description: User's firstname.
+        lastname:
+          type: string
+          description: User's lastname.
+        roles:
+          type: array
+          description: User's Roles.
+          items:
+            type: string
+        squads:
+          type: array
+          description: User's Roles.
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date
+          description: Creation date
+paths:
+  /invite:
+    post:
+      summary: Invite a new user.
+      tags:
+      - Auth
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+              - email
+      responses:
+        '200':    # status code
+          description: Invite sent
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: User is already existing
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /login:
+    post:
+      summary: Log in.
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                    password:
+                      type: string
+              required:
+              - user
+      responses:
+        '200':    # status code
+          description: A JSON describing the user and his bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          description: Unauthorized
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /signup:
+    post:
+      summary: Sign up using an invite token.
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                    password:
+                      type: string
+                    firstname:
+                      type: string
+                    lastname:
+                      type: string
+              required:
+              - user
+      responses:
+        '200':    # status code
+          description: A JSON describing the user and his bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          description: User is already existing
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Token is expired
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /reset:
+    post:
+      summary: Reset user's password
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+              required:
+              - token
+              - password
+      responses:
+        '200':    # status code
+          description: Password has been reset
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Token is expired
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /reset/request:
+    post:
+      summary: Request a new password reset token
+      tags:
+      - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+              - email
+      responses:
+        '200':    # status code
+          description: Request successful
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request already made
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /users:
+    get:
+      summary: Get a list of all the users.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      responses:
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminUser'
+  /users/{userId}:
+    get:
+      summary: Get a single user.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

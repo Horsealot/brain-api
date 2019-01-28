@@ -94,7 +94,10 @@ UsersSchema.methods.toAuthJSON = function() {
         email: this.email,
         firstname: this.firstname,
         lastname: this.lastname,
+        createdAt: this.createdAt,
         token: this.generateJWT(),
+        squads: this.squads,
+        roles: this.roles,
     };
 };
 
@@ -105,7 +108,6 @@ UsersSchema.methods.toAuthJSON = function() {
 UsersSchema.methods.toJSON = function() {
     return {
         _id: this._id,
-        email: this.email,
         firstname: this.firstname,
         lastname: this.lastname,
     };
@@ -117,10 +119,10 @@ UsersSchema.methods.toJSON = function() {
  */
 UsersSchema.methods.toAdminJSON = function() {
     return { ...this.toJSON(),
+        email: this.email,
         squads: this.squads,
         roles: this.roles,
-        createdAt: this.createdAt,
-        slug: this.slug
+        createdAt: this.createdAt
     };
 };
 
