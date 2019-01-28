@@ -293,3 +293,63 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Update a single user.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  description: Limited to the user
+                  type: string
+                lastname:
+                  description: Limited to the user
+                  type: string
+                picture:
+                  description: Limited to the user
+                  type: string
+                description:
+                  description: Limited to the user
+                  type: string
+                jobTitle:
+                  description: Limited to an admin
+                  type: string
+                scorecard:
+                  description: Limited to an admin
+                  type: string
+                roles:
+                  description: Limited to an admin
+                  type: array
+                  items:
+                    type: string
+                squads:
+                  description: Limited to an admin
+                  type: array
+                  items:
+                    type: string
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

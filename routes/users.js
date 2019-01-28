@@ -13,8 +13,14 @@ module.exports = (router) => {
     /**
      * get a user
      */
-    router.get('/user/:id', auth.required, (req, res, next) => {
+    router.get('/users/:id', auth.required, (req, res, next) => {
         usercontroller.getUser(req, res, next);
+    });
+    /**
+     * get a user
+     */
+    router.post('/users/:id', auth.required, auth.loadUser, (req, res, next) => {
+        usercontroller.postUser(req, res, next);
     });
     //
     // /**

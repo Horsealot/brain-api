@@ -101,7 +101,7 @@ describe('Auth', () => {
     describe('/GET user', () => {
         it('should not accept a GET when unauthentified', (done) => {
             chai.request(server)
-                .get('/api/user/1')
+                .get('/api/users/1')
                 .send()
                 .end((err, res) => {
                     res.should.have.status(401);
@@ -112,7 +112,7 @@ describe('Auth', () => {
             let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
-                    .get('/api/user/1')
+                    .get('/api/users/1')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -125,7 +125,7 @@ describe('Auth', () => {
             let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
-                    .get('/api/user/5c4ae60ce24c6d20936f9264')
+                    .get('/api/users/5c4ae60ce24c6d20936f9264')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -134,14 +134,14 @@ describe('Auth', () => {
                     });
             })
         });
-        it('should return 404 on a not found', (done) => {
+        it('should return the user', (done) => {
             let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             let user2 = new UsersModel({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2'});
             user.save().then((user) => {
                 return user2.save();
             }).then(() => {
                 chai.request(server)
-                    .get('/api/user/' + user2.id)
+                    .get('/api/users/' + user2.id)
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -149,12 +149,189 @@ describe('Auth', () => {
                         res.should.be.json;
                         res.body.should.be.a('object');
                         res.body.should.have.property('user');
-                        res.body.user.should.have.property('email').eql(user2.email);
                         res.body.user.should.have.property('firstname').eql(user2.firstname);
                         res.body.user.should.have.property('lastname').eql(user2.lastname);
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.property('_id').eql(user2.id);
                         done();
+                    });
+            })
+        });
+    });
+
+    /*
+    * Test the /POST user route
+    */
+    describe('/POST user', () => {
+        it('should not accept a POST when unauthentified', (done) => {
+            chai.request(server)
+                .post('/api/users/1')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should return 400 on a bad id', (done) => {
+            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            user.save().then((user) => {
+                chai.request(server)
+                    .post('/api/users/1')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        done();
+                    });
+            })
+        });
+        it('should return 404 on a not found', (done) => {
+            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            user.save().then((user) => {
+                let body = {
+                    user: {
+                        firstname: 'fn',
+                        lastname: 'ln'
+                    }
+                };
+                chai.request(server)
+                    .post('/api/users/5c4ae60ce24c6d20936f9264')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send(body)
+                    .end((err, res) => {
+                        res.should.have.status(404);
+                        done();
+                    });
+            })
+        });
+        it('should update when the request come from a user', (done) => {
+            let user = new UsersModel({
+                email: "test@testuser.com",
+                password: "testpassword",
+                firstname: 'Test',
+                lastname: 'User',
+                picture: 'picture',
+                description: 'description',
+                jobTitle: 'jobTitle',
+                scorecard: 'scorecard',
+                roles: ['USER'],
+                squads: ['SQUAD'],
+            });
+            user.save().then((user) => {
+                let body = {
+                    user: {
+                        firstname: 'newfirstname',
+                        lastname: 'newlastname',
+                        picture: 'newPicture',
+                        description: 'newDescription',
+                        jobTitle: 'newJobTitle',
+                        scorecard: 'newScorecard',
+                        roles: ['USER', 'ADMIN', 'OTHER'],
+                        squads: ['SQUAD', 'SQUAD2'],
+                    }
+                };
+                chai.request(server)
+                    .post('/api/users/' + user.id)
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send(body)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('user');
+                        res.body.user.should.have.property('firstname').eql("updated");
+                        res.body.user.should.have.property('lastname').eql("updated");
+                        res.body.user.should.have.property('picture').eql("updated");
+                        res.body.user.should.have.property('description').eql("updated");
+                        res.body.user.should.have.property('jobTitle').eql("not allowed");
+                        res.body.user.should.have.property('scorecard').eql("not allowed");
+                        res.body.user.should.have.property('roles').eql("not allowed");
+                        res.body.user.should.have.property('squads').eql("not allowed");
+                        res.body.user.should.have.not.property('token');
+                        res.body.user.should.have.not.property('email');
+
+                        UsersModel.findById(user._id).then((user) => {
+                            user.should.be.a('object');
+                            user.should.have.property('firstname').eql("newfirstname");
+                            user.should.have.property('lastname').eql("newlastname");
+                            user.should.have.property('picture').eql("newPicture");
+                            user.should.have.property('description').eql("newDescription");
+                            user.should.have.property('jobTitle').eql("jobTitle");
+                            user.should.have.property('scorecard').eql("scorecard");
+                            user.should.have.property('roles').that.includes("USER");
+                            user.should.have.property('roles').that.not.includes("ADMIN");
+                            user.should.have.property('roles').that.not.includes("OTHER");
+                            user.should.have.property('squads').that.includes("SQUAD");
+                            user.should.have.property('roles').that.not.includes("SQUAD2");
+                            done();
+                        });
+                    });
+            });
+        });
+        it('should update when the request come from an admin', (done) => {
+            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new UsersModel({
+                email: "test2@testuser.com",
+                password: "testpassword2",
+                firstname: 'Test2',
+                lastname: 'User2',
+                picture: 'picture2',
+                description: 'description2',
+                jobTitle: 'jobTitle2',
+                scorecard: 'scorecard2',
+                roles: ['USER'],
+                squads: ['SQUAD'],
+            });
+            user.save().then((user) => {
+                return user2.save();
+            }).then(() => {
+                let body = {
+                    user: {
+                        firstname: 'newfirstname',
+                        lastname: 'newlastname',
+                        picture: 'newPicture',
+                        description: 'newDescription',
+                        jobTitle: 'newJobTitle',
+                        scorecard: 'newScorecard',
+                        roles: ['USER', 'ADMIN', 'OTHER'],
+                        squads: ['SQUAD', 'SQUAD2'],
+                    }
+                };
+                chai.request(server)
+                    .post('/api/users/' + user2.id)
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send(body)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('user');
+                        res.body.user.should.have.property('firstname').eql("not allowed");
+                        res.body.user.should.have.property('lastname').eql("not allowed");
+                        res.body.user.should.have.property('picture').eql("not allowed");
+                        res.body.user.should.have.property('description').eql("not allowed");
+                        res.body.user.should.have.property('jobTitle').eql("updated");
+                        res.body.user.should.have.property('scorecard').eql("updated");
+                        res.body.user.should.have.property('roles').eql("updated");
+                        res.body.user.should.have.property('squads').eql("updated");
+                        res.body.user.should.have.not.property('token');
+                        res.body.user.should.have.not.property('email');
+
+                        UsersModel.findById(user2._id).then((user) => {
+                            user.should.be.a('object');
+                            user.should.have.property('firstname').eql("Test2");
+                            user.should.have.property('lastname').eql("User2");
+                            user.should.have.property('picture').eql("picture2");
+                            user.should.have.property('description').eql("description2");
+                            user.should.have.property('jobTitle').eql("newJobTitle");
+                            user.should.have.property('scorecard').eql("newScorecard");
+                            user.should.have.property('roles').that.includes("USER");
+                            user.should.have.property('roles').that.includes("ADMIN");
+                            user.should.have.property('roles').that.not.includes("OTHER");
+                            user.should.have.property('squads').that.includes("SQUAD");
+                            user.should.have.property('squads').that.includes("SQUAD2");
+                            done();
+                        });
                     });
             })
         });

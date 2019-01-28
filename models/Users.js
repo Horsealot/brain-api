@@ -6,21 +6,41 @@ const UserRole = require('./UserRole');
 const { Schema } = mongoose;
 
 const UsersSchema = new Schema({
-    firstname: String,
-    lastname: String,
-    slug: String,
-    roles: [String],
-    squads: [String],
     email: String,
     hash: String,
     salt: String,
     createdAt: Date,
     lastUpdatedAt: Date,
-    lastLoginAt: Date
+    lastLoginAt: Date,
+
+    roles: [String],
+    squads: [String],
+
+    birthdate: Date,
+    firstname: String,
+    lastname: String,
+    picture: String,
+    description: String,
+    scorecard: String,
+    jobTitle: String,
+    jobHistory: [String]
 });
 
+const MODIFIABLE = [
+    "firstname", "lastname", "picture", "description"
+];
+const MODIFIABLE_BY_ADMIN = [
+    "jobTitle", "scorecard", "roles", "squads"
+];
+
 UsersSchema.methods.setRoles = function(role) {
-    this.roles = [UserRole.cleanRole(role)];
+    if(Array.isArray(role)) {
+        this.roles = [...new Set(role.map((dirtyRole) => {
+            return UserRole.cleanRole(dirtyRole);
+        }))];
+    } else {
+        this.roles = [UserRole.cleanRole(role)];
+    }
 };
 UsersSchema.methods.addRole = function(role) {
     if(!Array.isArray(this.roles)) {
@@ -35,6 +55,38 @@ UsersSchema.methods.rmRole = function(role) {
     this.roles.unshift(UserRole.cleanRole(role));
 };
 
+UsersSchema.methods.setJobTitle = function(jobTitle) {
+    if(!Array.isArray(this.jobHistory)) {
+        this.jobHistory = [];
+    }
+    this.jobHistory.push(this.jobTitle);
+    this.jobTitle = jobTitle;
+};
+
+UsersSchema.methods.updateFromEntity = function(newUser, fromAdmin = false) {
+    const updateStatus = Object.assign({}, newUser);
+    for(let key in newUser) {
+        const upperCaseKey = key.replace(/^\w/, c => c.toUpperCase());
+        if(MODIFIABLE.indexOf(key) >= 0 && !fromAdmin) {
+            if(typeof this["set" + upperCaseKey] === 'function') {
+                this["set" + upperCaseKey](newUser[key]);
+            } else {
+                this[key] = newUser[key];
+            }
+            updateStatus[key] = "updated";
+        } else if(MODIFIABLE_BY_ADMIN.indexOf(key) >= 0 && fromAdmin) {
+            if(typeof this["set" + upperCaseKey] === 'function') {
+                this["set" + upperCaseKey](newUser[key]);
+            } else {
+                this[key] = newUser[key];
+            }
+            updateStatus[key] = "updated";
+        } else {
+            updateStatus[key] = "not allowed";
+        }
+    }
+    return updateStatus;
+};
 
 UsersSchema.pre('save', function(next) {
     if(!this.createdAt) {
@@ -115,7 +167,7 @@ UsersSchema.methods.toJSON = function() {
 
 /**
  * Return Admin json
- * @returns {{_id: *, email: *, firstname: *, lastname: *, squads: *, roles: *, createdAt: *, slug: *}}
+ * @returns {{_id: *, email: *, firstname: *, lastname: *, squads: *, roles: *, createdAt: *}}
  */
 UsersSchema.methods.toAdminJSON = function() {
     return { ...this.toJSON(),
