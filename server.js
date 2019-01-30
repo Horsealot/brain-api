@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const formData = require('express-form-data')
 const cors = require('cors');
 const mongoose = require('mongoose');
 const errorHandler = require('errorhandler');
@@ -26,7 +27,8 @@ app.use(cors());
 app.use(helmet());
 app.use(require('morgan')('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '5mb'}));
+app.use(formData.parse())
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({ secret: 'brainsecret-token', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
 

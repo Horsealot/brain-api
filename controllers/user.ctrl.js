@@ -30,7 +30,11 @@ module.exports = {
             } else if(!user) {
                 return res.sendStatus(404)
             } else {
-                res.send({user: user.toJSON()});
+                if(UserRole.isSuperAdmin(req.user)) {
+                    res.send({user: user.toAdminJSON()});
+                } else {
+                    res.send({user: user.toJSON()});
+                }
             }
         })
     },
@@ -50,7 +54,7 @@ module.exports = {
             }
 
             if(dbUser._id.toString() === req.user._id.toString() || UserRole.isSuperAdmin(req.user)) {
-                const updateStatus = dbUser.updateFromEntity(user, UserRole.isSuperAdmin(req.user));
+                const updateStatus = dbUser.updateFromEntity(user, dbUser._id.toString() === req.user._id.toString(), UserRole.isSuperAdmin(req.user));
                 dbUser.save().then(() => {
                     return res.send({user: updateStatus});
                 })
@@ -59,39 +63,23 @@ module.exports = {
             }
         })
     },
+    getSquads: (req, res, next) => {
+        UsersModel.find({}).exec((err, users) => {
+            if (err) {
+                return res.send(err);
+            }
 
-    // addUser: (req, res, next) => {
-    //     new User(req.body).save((err, newUser) => {
-    //         if (err)
-    //             res.send(err)
-    //         else if (!newUser)
-    //             res.sendStatus(400)
-    //         else
-    //             res.send(newUser)
-    //         next()
-    //     });
-    // },
-    // /**
-    //  * user_to_follow_id, user_id
-    //  */
-    // followUser: (req, res, next) => {
-    //     User.findById(req.body.id).then((user) => {
-    //         return user.follow(req.body.user_id).then(() => {
-    //             return res.json({msg: "followed"})
-    //         })
-    //     }).catch(next)
-    // },
-    // getUserProfile: (req, res, next) => {
-    //     User.findById(req.params.id).then
-    //     ((_user) => {
-    //         return User.find({'following': req.params.id}).then((_users)=>{
-    //             _users.forEach((user_)=>{
-    //                 _user.addFollower(user_)
-    //             })
-    //             return Article.find({'author': req.params.id}).then((_articles)=> {
-    //                 return res.json({ user: _user, articles: _articles })
-    //             })
-    //         })
-    //     }).catch((err)=>console.log(err))
-    // }
+            const squads = {};
+            users.forEach((user) => {
+                user.squads.forEach((squad) => {
+                    if(!Array.isArray(squads[squad])) {
+                        squads[squad] = new Array();
+                    }
+                    squads[squad].push(user.toJSON());
+                })
+            });
+
+            return res.send({squads});
+        })
+    }
 };

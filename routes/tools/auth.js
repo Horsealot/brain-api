@@ -44,13 +44,13 @@ const auth = {
                 }
                 req.user = user;
                 if(!UserRole.isSuperAdmin(req.user)) {
-                    return res.sendStatus(401);
+                    return res.sendStatus(403);
                 }
                 next();
             });
         } else {
             if(!UserRole.isSuperAdmin(req.user)) {
-                return res.sendStatus(401);
+                return res.sendStatus(403);
             }
             next();
         }

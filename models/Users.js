@@ -5,6 +5,8 @@ const UserRole = require('./UserRole');
 
 const { Schema } = mongoose;
 
+const { SocialMedias, validateSocialMedia } = require('./SocialMedias');
+
 const UsersSchema = new Schema({
     email: String,
     hash: String,
@@ -12,6 +14,7 @@ const UsersSchema = new Schema({
     createdAt: Date,
     lastUpdatedAt: Date,
     lastLoginAt: Date,
+    phoneNumber: String,
 
     roles: [String],
     squads: [String],
@@ -23,14 +26,15 @@ const UsersSchema = new Schema({
     description: String,
     scorecard: String,
     jobTitle: String,
-    jobHistory: [String]
+    jobHistory: [String],
+    socialMedias: [SocialMedias]
 });
 
 const MODIFIABLE = [
-    "firstname", "lastname", "picture", "description"
+    "firstname", "lastname", "picture", "description", "phoneNumber", "socialMedias", 'birthdate'
 ];
 const MODIFIABLE_BY_ADMIN = [
-    "jobTitle", "scorecard", "roles", "squads"
+    "jobTitle", "scorecard", "roles", "squads", "phoneNumber"
 ];
 
 UsersSchema.methods.setRoles = function(role) {
@@ -55,6 +59,35 @@ UsersSchema.methods.rmRole = function(role) {
     this.roles.unshift(UserRole.cleanRole(role));
 };
 
+UsersSchema.methods.setSocialMedias = function(socialMedias) {
+    if(Array.isArray(socialMedias)) {
+        this.socialMedias = [];
+        for(var i = 0; i < socialMedias.length; i++) {
+            if(validateSocialMedia(socialMedias[i])) {
+                this.socialMedias.push(socialMedias[i]);
+            }
+        }
+    } else {
+        if(validateSocialMedia(socialMedias)) {
+            this.socialMedias = [socialMedias];
+        }
+    }
+};
+UsersSchema.methods.addSocialMedias = function(socialMedia) {
+    if(!Array.isArray(this.socialMedias)) {
+        this.socialMedias = [];
+    }
+    if(validateSocialMedia(socialMedia)) {
+        this.socialMedias.push(socialMedia);
+    }
+};
+UsersSchema.methods.rmSocialMedias = function(socialMedia) {
+    if(!Array.isArray(this.socialMedias)) {
+        this.socialMedias = [];
+    }
+    this.socialMedias.unshift(socialMedia);
+};
+
 UsersSchema.methods.setJobTitle = function(jobTitle) {
     if(!Array.isArray(this.jobHistory)) {
         this.jobHistory = [];
@@ -63,11 +96,11 @@ UsersSchema.methods.setJobTitle = function(jobTitle) {
     this.jobTitle = jobTitle;
 };
 
-UsersSchema.methods.updateFromEntity = function(newUser, fromAdmin = false) {
+UsersSchema.methods.updateFromEntity = function(newUser, fromUser, fromAdmin = false) {
     const updateStatus = Object.assign({}, newUser);
     for(let key in newUser) {
         const upperCaseKey = key.replace(/^\w/, c => c.toUpperCase());
-        if(MODIFIABLE.indexOf(key) >= 0 && !fromAdmin) {
+        if(MODIFIABLE.indexOf(key) >= 0 && fromUser) {
             if(typeof this["set" + upperCaseKey] === 'function') {
                 this["set" + upperCaseKey](newUser[key]);
             } else {
@@ -160,8 +193,17 @@ UsersSchema.methods.toAuthJSON = function() {
 UsersSchema.methods.toJSON = function() {
     return {
         _id: this._id,
+        createdAt: this.createdAt,
         firstname: this.firstname,
         lastname: this.lastname,
+        picture: this.picture,
+        description: this.description,
+        scorecard: this.scorecard,
+        birthdate: this.birthdate,
+        jobTitle: this.jobTitle,
+        phoneNumber: this.phoneNumber,
+        socialMedias: this.socialMedias,
+        squads: this.squads
     };
 };
 

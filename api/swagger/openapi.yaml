@@ -60,12 +60,42 @@ components:
         _id:
           type: integer
           description: The user ID.
+        createdAt:
+          type: string
+          format: date
+          description: Creation date
         firstname:
           type: string
           description: User's firstname.
         lastname:
           type: string
           description: User's lastname.
+        picture:
+          type: string
+          description: User's picture.
+        scorecard:
+          type: string
+          description: User's scorecard.
+        jobTitle:
+          type: string
+          description: User's jobTitle.
+        phoneNumber:
+          type: string
+          description: User's phoneNumber.
+        birthdate:
+          type: string
+          format: date
+          description: User's birthdate
+        squads:
+          type: array
+          description: User's Squads.
+          items:
+            type: string
+        socialMedias:
+          type: array
+          description: User's Social medias.
+          items:
+            type: string
     AdminUser:
       description: User schema when returned on a superadmin endpoint
       type: object
@@ -86,7 +116,7 @@ components:
             type: string
         squads:
           type: array
-          description: User's Roles.
+          description: User's Squads.
           items:
             type: string
         createdAt:
@@ -267,6 +297,30 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/AdminUser'
+  /squads:
+    get:
+      summary: Get a list of all the users in their respective squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      responses:
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  squads:
+                    type: object
+                    properties:
+                      squadName:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
   /users/{userId}:
     get:
       summary: Get a single user.

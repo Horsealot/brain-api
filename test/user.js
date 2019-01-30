@@ -53,7 +53,7 @@ describe('Auth', () => {
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
-                        res.should.have.status(401);
+                        res.should.have.status(403);
                         done();
                     });
             })
@@ -89,6 +89,63 @@ describe('Auth', () => {
                         // res.body.users[1].should.have.property('roles').eql(user2.roles);
                         res.body.users[1].should.not.have.property('token');
                         res.body.users[1].should.have.property('_id').eql(user2.id);
+                        done();
+                    });
+            })
+        });
+    });
+
+    /*
+    * Test the /GET squads route
+    */
+    describe('/GET squads', () => {
+        it('should not accept a GET when unauthentified', (done) => {
+            chai.request(server)
+                .get('/api/squads')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should accept a GET when authentified', (done) => {
+            let user = new UsersModel({ email: "test@testuser.com", picture: 'picture1', password: "testpassword", firstname: 'Test', lastname: 'User', squads: ['SQUAD1']});
+            let user2 = new UsersModel({ email: "test2@testuser.com", picture: 'picture2', password: "testpassword", firstname: 'Test2', lastname: 'User2', squads: ['SQUAD2']});
+            user.save().then((user) => {
+                return user2.save();
+            }).then(() => {
+                chai.request(server)
+                    .get('/api/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('squads');
+                        res.body.squads.should.be.a('object');
+                        res.body.squads.should.have.property('SQUAD1');
+                        res.body.squads.SQUAD1.should.be.a('array');
+                        res.body.squads.should.have.property('SQUAD2');
+                        res.body.squads.SQUAD2.should.be.a('array');
+                        // User 1
+                        res.body.squads.SQUAD1[0].should.not.have.property('email');
+                        res.body.squads.SQUAD1[0].should.have.property('firstname').eql(user.firstname);
+                        res.body.squads.SQUAD1[0].should.have.property('lastname').eql(user.lastname);
+                        res.body.squads.SQUAD1[0].should.have.property('picture').eql(user.picture);
+                        res.body.squads.SQUAD1[0].should.have.property('squads');
+                        res.body.squads.SQUAD1[0].should.not.have.property('roles');
+                        res.body.squads.SQUAD1[0].should.not.have.property('token');
+                        res.body.squads.SQUAD1[0].should.have.property('_id').eql(user.id);
+                        // User 2
+                        res.body.squads.SQUAD2[0].should.not.have.property('email');
+                        res.body.squads.SQUAD2[0].should.have.property('firstname').eql(user2.firstname);
+                        res.body.squads.SQUAD2[0].should.have.property('lastname').eql(user2.lastname);
+                        res.body.squads.SQUAD2[0].should.have.property('picture').eql(user2.picture);
+                        res.body.squads.SQUAD2[0].should.have.property('squads');
+                        res.body.squads.SQUAD2[0].should.not.have.property('roles');
+                        res.body.squads.SQUAD2[0].should.not.have.property('token');
+                        res.body.squads.SQUAD2[0].should.have.property('_id').eql(user2.id);
                         done();
                     });
             })

@@ -5,17 +5,26 @@ const usercontroller = require('./../controllers/user.ctrl');
 module.exports = (router) => {
 
     /**
+     * get all squads
+     */
+    router.get('/squads', auth.required, (req, res, next) => {
+        usercontroller.getSquads(req, res, next);
+    });
+
+    /**
      * get all users
      */
     router.get('/users', auth.required, auth.admin, (req, res, next) => {
         usercontroller.getUsers(req, res, next);
     });
+
     /**
      * get a user
      */
-    router.get('/users/:id', auth.required, (req, res, next) => {
+    router.get('/users/:id', auth.required, auth.loadUser, (req, res, next) => {
         usercontroller.getUser(req, res, next);
     });
+
     /**
      * get a user
      */
