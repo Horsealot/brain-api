@@ -3,6 +3,11 @@ const availableCommands = [
         file: 'init.admin',
         cmd: 'init-admin',
         description: 'Init the first superadmin'
+    },
+    {
+        file: 'init.team',
+        cmd: 'init-team',
+        description: 'Init basic team members'
     }
 ];
 
