@@ -24,19 +24,23 @@ module.exports = {
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
             return res.sendStatus(400)
         }
-        UsersModel.findById(req.params.id).exec((err, user)=> {
-            if (err) {
-                return res.send(err)
-            } else if(!user) {
-                return res.sendStatus(404)
-            } else {
-                if(UserRole.isSuperAdmin(req.user)) {
-                    res.send({user: user.toAdminJSON()});
+        if(req.user._id.toString() === req.params.id) {
+            res.send({user: req.user.toAdminJSON()});
+        } else {
+            UsersModel.findById(req.params.id).exec((err, user)=> {
+                if (err) {
+                    return res.send(err)
+                } else if(!user) {
+                    return res.sendStatus(404)
                 } else {
-                    res.send({user: user.toJSON()});
+                    if(UserRole.isSuperAdmin(req.user)) {
+                        res.send({user: user.toAdminJSON()});
+                    } else {
+                        res.send({user: user.toJSON()});
+                    }
                 }
-            }
-        })
+            })
+        }
     },
     postUser: (req, res, next) => {
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {

@@ -192,8 +192,34 @@ describe('Auth', () => {
             })
         });
         it('should return the user', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let user2 = new UsersModel({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2'});
+            let user = new UsersModel({
+                email: "test@testuser.com",
+                password: "testpassword",
+                firstname: 'Test',
+                lastname: 'User',
+                picture: 'picture1',
+                description: 'description1',
+                scorecard: 'scorecard1',
+                birthdate: new Date(),
+                jobTitle: 'jobTitle1',
+                phoneNumber: 'phoneNumber',
+                administrativeLink: 'administrativeLink',
+                squads: ['SQUAD1']
+            });
+            let user2 = new UsersModel({
+                email: 'test2@testuser.com',
+                password: 'testpassword2',
+                firstname: 'Test2',
+                lastname: 'User2',
+                picture: 'picture2',
+                description: 'description2',
+                scorecard: 'scorecard2',
+                birthdate: new Date(),
+                jobTitle: 'jobTitle2',
+                phoneNumber: 'phoneNumber2',
+                administrativeLink: 'administrativeLink2',
+                squads: ['SQUAD2']
+            });
             user.save().then((user) => {
                 return user2.save();
             }).then(() => {
@@ -206,8 +232,81 @@ describe('Auth', () => {
                         res.should.be.json;
                         res.body.should.be.a('object');
                         res.body.should.have.property('user');
+                        res.body.user.should.have.property('createdAt').eql(user2.createdAt.toISOString());
                         res.body.user.should.have.property('firstname').eql(user2.firstname);
                         res.body.user.should.have.property('lastname').eql(user2.lastname);
+                        res.body.user.should.have.property('picture').eql(user2.picture);
+                        res.body.user.should.have.property('description').eql(user2.description);
+                        res.body.user.should.have.property('scorecard').eql(user2.scorecard);
+                        res.body.user.should.have.property('birthdate').eql(user2.birthdate.toISOString());
+                        res.body.user.should.have.property('jobTitle').eql(user2.jobTitle);
+                        res.body.user.should.have.property('phoneNumber').eql(user2.phoneNumber);
+                        res.body.user.should.have.property('squads');
+                        res.body.user.should.have.not.property('email');
+                        res.body.user.should.have.not.property('roles');
+                        res.body.user.should.have.not.property('administrativeLink');
+                        res.body.user.should.have.not.property('token');
+                        res.body.user.should.have.property('_id').eql(user2.id);
+                        done();
+                    });
+            })
+        });
+
+
+        it('should return my user with extended parameters', (done) => {
+            let user = new UsersModel({
+                email: "test@testuser.com",
+                password: "testpassword",
+                firstname: 'Test',
+                lastname: 'User',
+                picture: 'picture1',
+                description: 'description1',
+                scorecard: 'scorecard1',
+                birthdate: new Date(),
+                jobTitle: 'jobTitle1',
+                phoneNumber: 'phoneNumber',
+                administrativeLink: 'administrativeLink',
+                squads: ['SQUAD1']
+            });
+            let user2 = new UsersModel({
+                email: 'test2@testuser.com',
+                password: 'testpassword2',
+                firstname: 'Test2',
+                lastname: 'User2',
+                picture: 'picture2',
+                description: 'description2',
+                scorecard: 'scorecard2',
+                birthdate: new Date(),
+                jobTitle: 'jobTitle2',
+                phoneNumber: 'phoneNumber2',
+                administrativeLink: 'administrativeLink2',
+                squads: ['SQUAD2']
+            });
+            user.save().then((user) => {
+                return user2.save();
+            }).then(() => {
+                chai.request(server)
+                    .get('/api/users/' + user2.id)
+                    .set('Authorization', 'Bearer ' + user2.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('user');
+                        res.body.user.should.have.property('createdAt').eql(user2.createdAt.toISOString());
+                        res.body.user.should.have.property('firstname').eql(user2.firstname);
+                        res.body.user.should.have.property('lastname').eql(user2.lastname);
+                        res.body.user.should.have.property('picture').eql(user2.picture);
+                        res.body.user.should.have.property('description').eql(user2.description);
+                        res.body.user.should.have.property('scorecard').eql(user2.scorecard);
+                        res.body.user.should.have.property('birthdate').eql(user2.birthdate.toISOString());
+                        res.body.user.should.have.property('jobTitle').eql(user2.jobTitle);
+                        res.body.user.should.have.property('phoneNumber').eql(user2.phoneNumber);
+                        res.body.user.should.have.property('squads');
+                        res.body.user.should.have.property('email');
+                        res.body.user.should.have.property('roles');
+                        res.body.user.should.have.property('administrativeLink');
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.property('_id').eql(user2.id);
                         done();

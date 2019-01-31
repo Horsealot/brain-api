@@ -103,26 +103,53 @@ components:
         _id:
           type: integer
           description: The user ID.
+        createdAt:
+          type: string
+          format: date
+          description: Creation date
         firstname:
           type: string
           description: User's firstname.
         lastname:
           type: string
           description: User's lastname.
-        roles:
-          type: array
-          description: User's Roles.
-          items:
-            type: string
+        picture:
+          type: string
+          description: User's picture.
+        scorecard:
+          type: string
+          description: User's scorecard.
+        jobTitle:
+          type: string
+          description: User's jobTitle.
+        phoneNumber:
+          type: string
+          description: User's phoneNumber.
+        birthdate:
+          type: string
+          format: date
+          description: User's birthdate
         squads:
           type: array
           description: User's Squads.
           items:
             type: string
-        createdAt:
+        socialMedias:
+          type: array
+          description: User's Social medias.
+          items:
+            type: string
+        email:
           type: string
-          format: date
-          description: Creation date
+          description: User's email.
+        administrativeLink:
+          type: string
+          description: User's administrativeLink.
+        roles:
+          type: array
+          description: User's roles.
+          items:
+            type: string
 paths:
   /invite:
     post:

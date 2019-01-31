@@ -14,6 +14,7 @@ const UsersSchema = new Schema({
     createdAt: Date,
     lastUpdatedAt: Date,
     lastLoginAt: Date,
+    lastPasswordUpdateAt: Date,
     phoneNumber: String,
 
     roles: [String],
@@ -27,14 +28,15 @@ const UsersSchema = new Schema({
     scorecard: String,
     jobTitle: String,
     jobHistory: [String],
-    socialMedias: [SocialMedias]
+    socialMedias: [SocialMedias],
+    administrativeLink: String
 });
 
 const MODIFIABLE = [
     "firstname", "lastname", "picture", "description", "phoneNumber", "socialMedias", 'birthdate'
 ];
 const MODIFIABLE_BY_ADMIN = [
-    "jobTitle", "scorecard", "roles", "squads", "phoneNumber"
+    "jobTitle", "scorecard", "roles", "squads", "phoneNumber", "administrativeLink"
 ];
 
 UsersSchema.methods.setRoles = function(role) {
@@ -142,6 +144,7 @@ UsersSchema.pre('save', function(next) {
 UsersSchema.methods.setPassword = function(password) {
     this.salt = crypto.randomBytes(16).toString('hex');
     this.hash = crypto.pbkdf2Sync(password, this.salt, 10000, 512, 'sha512').toString('hex');
+    this.lastPasswordUpdateAt = new Date();
 };
 
 /**
@@ -182,7 +185,7 @@ UsersSchema.methods.toAuthJSON = function() {
         createdAt: this.createdAt,
         token: this.generateJWT(),
         squads: this.squads,
-        roles: this.roles,
+        roles: this.roles
     };
 };
 
@@ -214,9 +217,8 @@ UsersSchema.methods.toJSON = function() {
 UsersSchema.methods.toAdminJSON = function() {
     return { ...this.toJSON(),
         email: this.email,
-        squads: this.squads,
         roles: this.roles,
-        createdAt: this.createdAt
+        administrativeLink: this.administrativeLink
     };
 };
 
