@@ -1,7 +1,6 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-let mongoose = require("mongoose");
 //Require the dev-dependencies
 let chai = require('chai');
 let expect = chai.expect;
@@ -10,23 +9,20 @@ let server = require('../server');
 let should = chai.should();
 let sinon = require('sinon');
 
-let Users = require('./../models/Users');
-let Invites = require('./../models/Invites');
-let PasswordRequests = require('./../models/PasswordRequests');
-const UserRole = require('./../models/UserRole');
-const InvitesModel = mongoose.model('Invites');
-const UsersModel = mongoose.model('Users');
-const PasswordRequestsModel = mongoose.model('PasswordRequests');
+const models = require('./../models');
 
 chai.use(chaiHttp);
 //Our parent block
 describe('Auth', () => {
     beforeEach((done) => { //Before each test we empty the database
-        UsersModel.deleteMany({}, (err) => {
+        models.PasswordRequests.destroy({where: {}}).then(() => {
+            return models.Invites.destroy({where: {}});
         }).then(() => {
-            return InvitesModel.deleteMany({});
+            return models.UserSquads.destroy({where: {}});
         }).then(() => {
-            return PasswordRequestsModel.deleteMany({});
+            return models.Users.destroy({where: {}});
+        }).then(() => {
+            return models.Squads.destroy({where: {}});
         }).then(() => {
             done();
         })
@@ -46,7 +42,7 @@ describe('Auth', () => {
                 });
         });
         it('should not accept a GET from a user not admin', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
                     .get('/api/users')
@@ -59,8 +55,8 @@ describe('Auth', () => {
             })
         });
         it('should accept a GET from an admin', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let user2 = new UsersModel({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2'});
             user.setRoles("ADMIN");
             user.save().then((user) => {
                 return user2.save();
@@ -81,14 +77,14 @@ describe('Auth', () => {
                         // res.body.users[0].should.have.property('squads').eql(user.squads);
                         // res.body.users[0].should.have.property('roles').eql(user.roles);
                         res.body.users[0].should.not.have.property('token');
-                        res.body.users[0].should.have.property('_id').eql(user.id);
+                        // res.body.users[0].should.have.property('id').eql(user.publicId);
                         res.body.users[1].should.have.property('email').eql(user2.email);
                         res.body.users[1].should.have.property('firstname').eql(user2.firstname);
                         res.body.users[1].should.have.property('lastname').eql(user2.lastname);
                         // res.body.users[1].should.have.property('squads').eql(user2.squads);
                         // res.body.users[1].should.have.property('roles').eql(user2.roles);
                         res.body.users[1].should.not.have.property('token');
-                        res.body.users[1].should.have.property('_id').eql(user2.id);
+                        res.body.users[1].should.have.property('id').eql(user2.publicId);
                         done();
                     });
             })
@@ -109,9 +105,27 @@ describe('Auth', () => {
                 });
         });
         it('should accept a GET when authentified', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", picture: 'picture1', password: "testpassword", firstname: 'Test', lastname: 'User', squads: ['SQUAD1']});
-            let user2 = new UsersModel({ email: "test2@testuser.com", picture: 'picture2', password: "testpassword", firstname: 'Test2', lastname: 'User2', squads: ['SQUAD2']});
-            user.save().then((user) => {
+            let user = new models.Users({ email: "test@testuser.com", picture: 'picture1', password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user2 = new models.Users({ email: "test2@testuser.com", picture: 'picture2', password: "testpassword", firstname: 'Test2', lastname: 'User2'});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            const squad2 = new models.Squads({
+                name: 'squad2',
+                slug: 'squad2'
+            });
+            squad1.save().then((squad1) => {
+                return squad2.save();
+            }).then(() => {
+                return user.save();
+            }).then(() => {
+                return user2.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then(() => {
+                user2.addSquad(squad2, {through: {role: 'ADMIN'}});
                 return user2.save();
             }).then(() => {
                 chai.request(server)
@@ -124,28 +138,28 @@ describe('Auth', () => {
                         res.body.should.be.a('object');
                         res.body.should.have.property('squads');
                         res.body.squads.should.be.a('object');
-                        res.body.squads.should.have.property('SQUAD1');
-                        res.body.squads.SQUAD1.should.be.a('array');
-                        res.body.squads.should.have.property('SQUAD2');
-                        res.body.squads.SQUAD2.should.be.a('array');
+                        res.body.squads.should.have.property('squad1');
+                        res.body.squads.squad1.should.be.a('array');
+                        res.body.squads.should.have.property('squad2');
+                        res.body.squads.squad2.should.be.a('array');
                         // User 1
-                        res.body.squads.SQUAD1[0].should.not.have.property('email');
-                        res.body.squads.SQUAD1[0].should.have.property('firstname').eql(user.firstname);
-                        res.body.squads.SQUAD1[0].should.have.property('lastname').eql(user.lastname);
-                        res.body.squads.SQUAD1[0].should.have.property('picture').eql(user.picture);
-                        res.body.squads.SQUAD1[0].should.have.property('squads');
-                        res.body.squads.SQUAD1[0].should.not.have.property('roles');
-                        res.body.squads.SQUAD1[0].should.not.have.property('token');
-                        res.body.squads.SQUAD1[0].should.have.property('_id').eql(user.id);
+                        res.body.squads.squad1[0].should.not.have.property('email');
+                        res.body.squads.squad1[0].should.have.property('firstname').eql(user.firstname);
+                        res.body.squads.squad1[0].should.have.property('lastname').eql(user.lastname);
+                        res.body.squads.squad1[0].should.have.property('picture').eql(user.picture);
+                        res.body.squads.squad1[0].should.have.property('squads');
+                        res.body.squads.squad1[0].should.not.have.property('roles');
+                        res.body.squads.squad1[0].should.not.have.property('token');
+                        res.body.squads.squad1[0].should.have.property('id').eql(user.publicId);
                         // User 2
-                        res.body.squads.SQUAD2[0].should.not.have.property('email');
-                        res.body.squads.SQUAD2[0].should.have.property('firstname').eql(user2.firstname);
-                        res.body.squads.SQUAD2[0].should.have.property('lastname').eql(user2.lastname);
-                        res.body.squads.SQUAD2[0].should.have.property('picture').eql(user2.picture);
-                        res.body.squads.SQUAD2[0].should.have.property('squads');
-                        res.body.squads.SQUAD2[0].should.not.have.property('roles');
-                        res.body.squads.SQUAD2[0].should.not.have.property('token');
-                        res.body.squads.SQUAD2[0].should.have.property('_id').eql(user2.id);
+                        res.body.squads.squad2[0].should.not.have.property('email');
+                        res.body.squads.squad2[0].should.have.property('firstname').eql(user2.firstname);
+                        res.body.squads.squad2[0].should.have.property('lastname').eql(user2.lastname);
+                        res.body.squads.squad2[0].should.have.property('picture').eql(user2.picture);
+                        res.body.squads.squad2[0].should.have.property('squads');
+                        res.body.squads.squad2[0].should.not.have.property('roles');
+                        res.body.squads.squad2[0].should.not.have.property('token');
+                        res.body.squads.squad2[0].should.have.property('id').eql(user2.publicId);
                         done();
                     });
             })
@@ -166,7 +180,7 @@ describe('Auth', () => {
                 });
         });
         it('should return 400 on a bad id', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
                     .get('/api/users/1')
@@ -179,10 +193,10 @@ describe('Auth', () => {
             })
         });
         it('should return 404 on a not found', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
-                    .get('/api/users/5c4ae60ce24c6d20936f9264')
+                    .get('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -192,7 +206,7 @@ describe('Auth', () => {
             })
         });
         it('should return the user', (done) => {
-            let user = new UsersModel({
+            let user = new models.Users({
                 email: "test@testuser.com",
                 password: "testpassword",
                 firstname: 'Test',
@@ -203,10 +217,9 @@ describe('Auth', () => {
                 birthdate: new Date(),
                 jobTitle: 'jobTitle1',
                 phoneNumber: 'phoneNumber',
-                administrativeLink: 'administrativeLink',
-                squads: ['SQUAD1']
+                administrativeLink: 'administrativeLink'
             });
-            let user2 = new UsersModel({
+            let user2 = new models.Users({
                 email: 'test2@testuser.com',
                 password: 'testpassword2',
                 firstname: 'Test2',
@@ -217,14 +230,31 @@ describe('Auth', () => {
                 birthdate: new Date(),
                 jobTitle: 'jobTitle2',
                 phoneNumber: 'phoneNumber2',
-                administrativeLink: 'administrativeLink2',
-                squads: ['SQUAD2']
+                administrativeLink: 'administrativeLink2'
             });
-            user.save().then((user) => {
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            const squad2 = new models.Squads({
+                name: 'squad2',
+                slug: 'squad2'
+            });
+            squad1.save().then((squad1) => {
+                return squad2.save();
+            }).then(() => {
+                return user.save();
+            }).then(() => {
+                return user2.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then(() => {
+                user2.addSquad(squad2, {through: {role: 'ADMIN'}});
                 return user2.save();
             }).then(() => {
                 chai.request(server)
-                    .get('/api/users/' + user2.id)
+                    .get('/api/users/' + user2.publicId)
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -238,7 +268,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('picture').eql(user2.picture);
                         res.body.user.should.have.property('description').eql(user2.description);
                         res.body.user.should.have.property('scorecard').eql(user2.scorecard);
-                        res.body.user.should.have.property('birthdate').eql(user2.birthdate.toISOString());
+                        res.body.user.should.have.property('birthdate').eql(user2.birthdate);
                         res.body.user.should.have.property('jobTitle').eql(user2.jobTitle);
                         res.body.user.should.have.property('phoneNumber').eql(user2.phoneNumber);
                         res.body.user.should.have.property('squads');
@@ -246,7 +276,7 @@ describe('Auth', () => {
                         res.body.user.should.have.not.property('roles');
                         res.body.user.should.have.not.property('administrativeLink');
                         res.body.user.should.have.not.property('token');
-                        res.body.user.should.have.property('_id').eql(user2.id);
+                        res.body.user.should.have.property('id').eql(user2.publicId);
                         done();
                     });
             })
@@ -254,7 +284,7 @@ describe('Auth', () => {
 
 
         it('should return my user with extended parameters', (done) => {
-            let user = new UsersModel({
+            let user = new models.Users({
                 email: "test@testuser.com",
                 password: "testpassword",
                 firstname: 'Test',
@@ -265,10 +295,9 @@ describe('Auth', () => {
                 birthdate: new Date(),
                 jobTitle: 'jobTitle1',
                 phoneNumber: 'phoneNumber',
-                administrativeLink: 'administrativeLink',
-                squads: ['SQUAD1']
+                administrativeLink: 'administrativeLink'
             });
-            let user2 = new UsersModel({
+            let user2 = new models.Users({
                 email: 'test2@testuser.com',
                 password: 'testpassword2',
                 firstname: 'Test2',
@@ -279,14 +308,31 @@ describe('Auth', () => {
                 birthdate: new Date(),
                 jobTitle: 'jobTitle2',
                 phoneNumber: 'phoneNumber2',
-                administrativeLink: 'administrativeLink2',
-                squads: ['SQUAD2']
+                administrativeLink: 'administrativeLink2'
             });
-            user.save().then((user) => {
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            const squad2 = new models.Squads({
+                name: 'squad2',
+                slug: 'squad2'
+            });
+            squad1.save().then((squad1) => {
+                return squad2.save();
+            }).then(() => {
+                return user.save();
+            }).then(() => {
+                return user2.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then(() => {
+                user2.addSquad(squad2, {through: {role: 'ADMIN'}});
                 return user2.save();
             }).then(() => {
                 chai.request(server)
-                    .get('/api/users/' + user2.id)
+                    .get('/api/users/' + user2.publicId)
                     .set('Authorization', 'Bearer ' + user2.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -300,7 +346,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('picture').eql(user2.picture);
                         res.body.user.should.have.property('description').eql(user2.description);
                         res.body.user.should.have.property('scorecard').eql(user2.scorecard);
-                        res.body.user.should.have.property('birthdate').eql(user2.birthdate.toISOString());
+                        res.body.user.should.have.property('birthdate').eql(user2.birthdate);
                         res.body.user.should.have.property('jobTitle').eql(user2.jobTitle);
                         res.body.user.should.have.property('phoneNumber').eql(user2.phoneNumber);
                         res.body.user.should.have.property('squads');
@@ -308,7 +354,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('roles');
                         res.body.user.should.have.property('administrativeLink');
                         res.body.user.should.have.not.property('token');
-                        res.body.user.should.have.property('_id').eql(user2.id);
+                        res.body.user.should.have.property('id').eql(user2.publicId);
                         done();
                     });
             })
@@ -329,7 +375,7 @@ describe('Auth', () => {
                 });
         });
         it('should return 400 on a bad id', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 chai.request(server)
                     .post('/api/users/1')
@@ -342,7 +388,7 @@ describe('Auth', () => {
             })
         });
         it('should return 404 on a not found', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then((user) => {
                 let body = {
                     user: {
@@ -351,7 +397,7 @@ describe('Auth', () => {
                     }
                 };
                 chai.request(server)
-                    .post('/api/users/5c4ae60ce24c6d20936f9264')
+                    .post('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send(body)
                     .end((err, res) => {
@@ -361,7 +407,7 @@ describe('Auth', () => {
             })
         });
         it('should update when the request come from a user', (done) => {
-            let user = new UsersModel({
+            let user = new models.Users({
                 email: "test@testuser.com",
                 password: "testpassword",
                 firstname: 'Test',
@@ -371,9 +417,23 @@ describe('Auth', () => {
                 jobTitle: 'jobTitle',
                 scorecard: 'scorecard',
                 roles: ['USER'],
-                squads: ['SQUAD'],
             });
-            user.save().then((user) => {
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            const squad2 = new models.Squads({
+                name: 'squad2',
+                slug: 'squad2'
+            });
+            squad1.save().then(() => {
+                return user.save();
+            }).then(() => {
+                return squad2.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
                 let body = {
                     user: {
                         firstname: 'newfirstname',
@@ -383,11 +443,11 @@ describe('Auth', () => {
                         jobTitle: 'newJobTitle',
                         scorecard: 'newScorecard',
                         roles: ['USER', 'ADMIN', 'OTHER'],
-                        squads: ['SQUAD', 'SQUAD2'],
+                        squads: [{name: 'squad1', role: 'USER'}, {name: 'squad2', role: 'USER'}],
                     }
                 };
                 chai.request(server)
-                    .post('/api/users/' + user.id)
+                    .post('/api/users/' + user.publicId)
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send(body)
                     .end((err, res) => {
@@ -406,7 +466,8 @@ describe('Auth', () => {
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.not.property('email');
 
-                        UsersModel.findById(user._id).then((user) => {
+                        models.Users.findOne({where: {id: user.id}, include: ['squads']}).then((user) => {
+                            user = user.toAdminJSON();
                             user.should.be.a('object');
                             user.should.have.property('firstname').eql("newfirstname");
                             user.should.have.property('lastname').eql("newlastname");
@@ -417,16 +478,17 @@ describe('Auth', () => {
                             user.should.have.property('roles').that.includes("USER");
                             user.should.have.property('roles').that.not.includes("ADMIN");
                             user.should.have.property('roles').that.not.includes("OTHER");
-                            user.should.have.property('squads').that.includes("SQUAD");
-                            user.should.have.property('roles').that.not.includes("SQUAD2");
+                            user.should.have.property('squads');
+                            user.squads[0].should.be.eql({ name: 'squad1', role: 'ADMIN' });
+                            // user.should.have.property('roles').that.not.includes("SQUAD2");
                             done();
                         });
                     });
             });
         });
         it('should update when the request come from an admin', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
-            let user2 = new UsersModel({
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new models.Users({
                 email: "test2@testuser.com",
                 password: "testpassword2",
                 firstname: 'Test2',
@@ -436,11 +498,32 @@ describe('Auth', () => {
                 jobTitle: 'jobTitle2',
                 scorecard: 'scorecard2',
                 roles: ['USER'],
-                squads: ['SQUAD'],
             });
-            user.save().then((user) => {
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            const squad2 = new models.Squads({
+                name: 'squad2',
+                slug: 'squad2'
+            });
+            const squad3 = new models.Squads({
+                name: 'squad3',
+                slug: 'squad3'
+            });
+            squad1.save().then(() => {
+                return user.save();
+            }).then(() => {
                 return user2.save();
             }).then(() => {
+                return squad2.save();
+            }).then(() => {
+                return squad3.save();
+            }).then(() => {
+                user2.addSquad(squad1, {through: {role: 'ADMIN'}});
+                user2.addSquad(squad3, {through: {role: 'USER'}});
+                return user2.save();
+            }).then((user2) => {
                 let body = {
                     user: {
                         firstname: 'newfirstname',
@@ -450,11 +533,11 @@ describe('Auth', () => {
                         jobTitle: 'newJobTitle',
                         scorecard: 'newScorecard',
                         roles: ['USER', 'ADMIN', 'OTHER'],
-                        squads: ['SQUAD', 'SQUAD2'],
+                        squads: [{name: 'squad1', role: 'USER'}, {name: 'squad2', role: 'USER'}],
                     }
                 };
                 chai.request(server)
-                    .post('/api/users/' + user2.id)
+                    .post('/api/users/' + user2.publicId)
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send(body)
                     .end((err, res) => {
@@ -473,7 +556,8 @@ describe('Auth', () => {
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.not.property('email');
 
-                        UsersModel.findById(user2._id).then((user) => {
+                        models.Users.findOne({where: {id: user2.id}, include: ['squads']}).then((user) => {
+                            user = user.toAdminJSON();
                             user.should.be.a('object');
                             user.should.have.property('firstname').eql("Test2");
                             user.should.have.property('lastname').eql("User2");
@@ -484,8 +568,9 @@ describe('Auth', () => {
                             user.should.have.property('roles').that.includes("USER");
                             user.should.have.property('roles').that.includes("ADMIN");
                             user.should.have.property('roles').that.not.includes("OTHER");
-                            user.should.have.property('squads').that.includes("SQUAD");
-                            user.should.have.property('squads').that.includes("SQUAD2");
+                            user.should.have.property('squads');
+                            user.squads[0].should.be.eql({ name: 'squad1', role: 'USER' });
+                            user.squads[1].should.be.eql({ name: 'squad2', role: 'USER' });
                             done();
                         });
                     });

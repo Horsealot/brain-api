@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "SET NODE_ENV=dev && node server.js",
+    "pretest": "NODE_ENV=test node_modules/.bin/sequelize db:migrate",
     "test": "mocha --exit  --timeout 10000"
   },
   "proxy": "http://localhost:5000/",
@@ -12,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "amqplib": "^0.5.3",
+    "async": "latest",
     "body-parser": "^1.18.3",
     "cloudinary": "^1.13.2",
     "compression": "^1.7.3",
@@ -29,8 +31,10 @@
     "morgan": "^1.9.1",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
-    "sinon": "^7.2.3",
-    "async": "latest"
+    "pg": "^7.8.0",
+    "sequelize": "^4.42.0",
+    "sequelize-cli": "^5.4.0",
+    "sinon": "^7.2.3"
   },
   "devDependencies": {
     "chai": "^3.5.0",

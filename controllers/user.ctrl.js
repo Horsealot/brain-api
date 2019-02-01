@@ -1,36 +1,30 @@
-const mongoose = require('mongoose');
 /**
  * Don't know why but this is the only place were I can require them
  */
-const Users = require('./../models/Users');
-const Invites = require('./../models/Invites');
-const PasswordRequests = require('./../models/PasswordRequests');
-const UserRole = require("../models/UserRole");
-const UsersModel = mongoose.model('Users');
+
+const models = require('./../models');
+const UserRole = require("../old_models/mongoose/UserRole");
 
 module.exports = {
     getUsers: (req, res, next) => {
         const page = (req.query.page ? req.query.page : 1) - 1;
-        UsersModel.find({}).limit(20).skip(page).exec((err, users)=> {
-            if (err) {
-                res.send(err)
-            } else {
+        models.Users.findAll({ offset: page*20, limit: 20 }).then((users)=> {
+            // if (err) {
+            //     res.send(err)
+            // } else {
                 users = users.map((user) => user.toAdminJSON());
                 res.send({users})
-            }
-        })
+            // }
+        }).catch((err) => {
+            res.sendStatus(500);
+        });
     },
     getUser: (req, res, next) => {
-        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            return res.sendStatus(400)
-        }
-        if(req.user._id.toString() === req.params.id) {
+        if(req.user.publicId === req.params.id) {
             res.send({user: req.user.toAdminJSON()});
         } else {
-            UsersModel.findById(req.params.id).exec((err, user)=> {
-                if (err) {
-                    return res.send(err)
-                } else if(!user) {
+            models.Users.findOne({where: {publicId: req.params.id}}).then((user)=> {
+                if(!user) {
                     return res.sendStatus(404)
                 } else {
                     if(UserRole.isSuperAdmin(req.user)) {
@@ -39,47 +33,69 @@ module.exports = {
                         res.send({user: user.toJSON()});
                     }
                 }
-            })
+            }).catch((err) => {
+                res.sendStatus(400);
+            });
         }
     },
     postUser: (req, res, next) => {
-        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            return res.sendStatus(400);
-        }
-        const { body: { user } } = req;
-        if(!user) {
-            return res.sendStatus(422);
-        }
-        UsersModel.findById(req.params.id).exec((err, dbUser) => {
-            if (err) {
-                return res.send(err);
-            } else if (!dbUser) {
+        models.Users.findOne({where: {publicId: req.params.id}, include: ['squads']}).then(async (dbUser) => {
+            const {body: {user}} = req;
+            if (!user) {
+                return res.sendStatus(422);
+            }
+            if (!dbUser) {
                 return res.sendStatus(404);
             }
+            if (dbUser.id === req.user.id || UserRole.isSuperAdmin(req.user)) {
+                const updateStatus = dbUser.updateFromEntity(user, dbUser.id === req.user.id, UserRole.isSuperAdmin(req.user));
 
-            if(dbUser._id.toString() === req.user._id.toString() || UserRole.isSuperAdmin(req.user)) {
-                const updateStatus = dbUser.updateFromEntity(user, dbUser._id.toString() === req.user._id.toString(), UserRole.isSuperAdmin(req.user));
+                if (UserRole.isSuperAdmin(req.user) && user.squads) {
+                    dbUser.squads.forEach((actualUserSquad) => {
+                        let indexOfExisitingSquad = -1;
+                        user.squads.forEach(async (squad, index) => {
+                            if (squad.name === actualUserSquad.slug) {
+                                actualUserSquad.UserSquads.role = squad.role;
+                                await actualUserSquad.UserSquads.save();
+                                indexOfExisitingSquad = index;
+                            }
+                        });
+                        if(indexOfExisitingSquad >= 0) {
+                            user.squads.splice(indexOfExisitingSquad, 1);
+                        } else {
+                            dbUser.removeSquad(actualUserSquad);
+                        }
+                    });
+                    const newSquads = await models.Squads.findAll({where: {slug: {in: user.squads.map((squad) => squad.name)}}});
+                    newSquads.forEach((squad) => {
+                        user.squads.forEach((userSquad) => {
+                            if(squad.slug === userSquad.name) {
+                                dbUser.addSquad(squad, {through: {role: userSquad.role}});
+                            }
+                        })
+                    });
+                    updateStatus.squads = 'updated';
+                }
+
                 dbUser.save().then(() => {
                     return res.send({user: updateStatus});
                 })
             } else {
                 return res.sendStatus(410);
             }
-        })
+        }).catch((err) => {
+            res.sendStatus(400);
+        });
     },
     getSquads: (req, res, next) => {
-        UsersModel.find({}).exec((err, users) => {
-            if (err) {
-                return res.send(err);
-            }
-
+        models.Users.findAll({include: ['squads']}).then((users) => {
             const squads = {};
             users.forEach((user) => {
-                user.squads.forEach((squad) => {
-                    if(!Array.isArray(squads[squad])) {
-                        squads[squad] = new Array();
+                user.parseSquads().forEach((squad) => {
+                    if(!Array.isArray(squads[squad.name])) {
+                        squads[squad.name] = new Array();
                     }
-                    squads[squad].push(user.toJSON());
+                    squads[squad.name].push(user.toJSON());
                 })
             });
 

@@ -1,7 +1,6 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-let mongoose = require("mongoose");
 //Require the dev-dependencies
 let chai = require('chai');
 let expect = chai.expect;
@@ -12,23 +11,20 @@ let sinon = require('sinon');
 
 const notificationProducer = require('./../producers/notifications');
 
-let Users = require('./../models/Users');
-let Invites = require('./../models/Invites');
-let PasswordRequests = require('./../models/PasswordRequests');
-const UserRole = require('./../models/UserRole');
-const InvitesModel = mongoose.model('Invites');
-const UsersModel = mongoose.model('Users');
-const PasswordRequestsModel = mongoose.model('PasswordRequests');
+const models = require('./../models');
 
 chai.use(chaiHttp);
 //Our parent block
 describe('Auth', () => {
     beforeEach((done) => { //Before each test we empty the database
-        UsersModel.deleteMany({}, (err) => {
+        models.PasswordRequests.destroy({where: {}}).then(() => {
+            return models.Invites.destroy({where: {}});
         }).then(() => {
-            return InvitesModel.deleteMany({});
+            return models.UserSquads.destroy({where: {}});
         }).then(() => {
-            return PasswordRequestsModel.deleteMany({});
+            return models.Users.destroy({where: {}});
+        }).then(() => {
+            return models.Squads.destroy({where: {}});
         }).then(() => {
             done();
         })
@@ -56,7 +52,7 @@ describe('Auth', () => {
             let body = {
                 email: "test@testuser.com"
             };
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.setRoles("ADMIN");
             user.save().then((user) => {
                 chai.request(server)
@@ -75,7 +71,7 @@ describe('Auth', () => {
             };
 
             const signupProducerStub = sinon.stub(notificationProducer, "signup").returns();
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.setRoles("ADMIN");
             user.save().then((user) => {
                 chai.request(server)
@@ -127,8 +123,8 @@ describe('Auth', () => {
                 });
         });
         it('it should signup the user', (done) => {
-            let invite = new InvitesModel({ email: "test@testuser.com", token: "testtoken"});
-            invite.save((err, invite) => {
+            let invite = new models.Invites({ email: "test@testuser.com", token: "testtoken"});
+            invite.save().then((invite) => {
                 let body = {
                     user: {
                         password: "test_password",
@@ -149,7 +145,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('firstname').eql('Test');
                         res.body.user.should.have.property('lastname').eql('User');
                         res.body.user.should.have.property('token');
-                        res.body.user.should.have.property('_id');
+                        res.body.user.should.have.property('id');
                         done();
                     });
             });
@@ -191,7 +187,7 @@ describe('Auth', () => {
                 });
         });
         it('should return unauthorized for bad credentials', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", firstname: 'Test', lastname: 'User'});
             user.setPassword('testpassword');
             let body = {
                 user: {
@@ -210,7 +206,7 @@ describe('Auth', () => {
             })
         });
         it('should return a jwt token for good credentials', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", firstname: 'Test', lastname: 'User'});
             user.setPassword('testpassword');
             let body = {
                 user: {
@@ -231,7 +227,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('firstname').eql('Test');
                         res.body.user.should.have.property('lastname').eql('User');
                         res.body.user.should.have.property('token');
-                        res.body.user.should.have.property('_id');
+                        res.body.user.should.have.property('id');
                         done();
                     });
             })
@@ -267,7 +263,7 @@ describe('Auth', () => {
                 });
         });
         it('should produce a passwordResetRequest event', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then(() => {
                 let body = {
                     email: 'test@testuser.com'
@@ -284,10 +280,11 @@ describe('Auth', () => {
             })
         });
         it('should not accept a second request', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let passwordRequest = new PasswordRequestsModel({user: user});
-            user.save().then(() => {
-                return passwordRequest.save();
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            user.save().then((user) => {
+                return models.PasswordRequests.create({
+                    UserId: user.id
+                });
             }).then(() => {
                 let body = {
                     email: 'test@testuser.com'
@@ -304,10 +301,12 @@ describe('Auth', () => {
             })
         });
         it('should not accept a request when an expired one exist', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let passwordRequest = new PasswordRequestsModel({user: user, expiredAt: new Date(new Date().getTime() - 60 * 60 * 48 * 1000)});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then(() => {
-                return passwordRequest.save();
+                return models.PasswordRequests.create({
+                    UserId: user.id,
+                    expiredAt: new Date(new Date().getTime() - 60 * 60 * 48 * 1000)
+                });
             }).then(() => {
                 let body = {
                     email: 'test@testuser.com'
@@ -343,11 +342,12 @@ describe('Auth', () => {
                 });
         });
         it('should not accept a POST without a password', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let passwordRequest = new PasswordRequestsModel({user: user});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then(() => {
-                return passwordRequest.save();
-            }).then(() => {
+                return models.PasswordRequests.create({
+                    UserId: user.id
+                });
+            }).then((passwordRequest) => {
                 let body = {
                     token: passwordRequest.token
                 };
@@ -361,12 +361,14 @@ describe('Auth', () => {
             })
         });
         it('should not accept an expired token', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             const twentyFiveHoursAgo = new Date(new Date() - 1000 * 60 * 60 * 25 * 2);
-            let passwordRequest = new PasswordRequestsModel({user: user, expiredAt: twentyFiveHoursAgo});
             user.save().then(() => {
-                return passwordRequest.save();
-            }).then(() => {
+                return models.PasswordRequests.create({
+                    UserId: user.id,
+                    expiredAt: twentyFiveHoursAgo
+                });
+            }).then((passwordRequest) => {
                 let body = {
                     password: 'newtestpassword',
                     token: passwordRequest.token
@@ -381,11 +383,12 @@ describe('Auth', () => {
             })
         });
         it('should modify the user password', (done) => {
-            let user = new UsersModel({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            let passwordRequest = new PasswordRequestsModel({user: user});
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
             user.save().then(() => {
-                return passwordRequest.save();
-            }).then(() => {
+                return models.PasswordRequests.create({
+                    UserId: user.id,
+                });
+            }).then((passwordRequest) => {
                 let body = {
                     password: 'newtestpassword',
                     token: passwordRequest.token

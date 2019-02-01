@@ -1,8 +1,11 @@
 const jwt = require('express-jwt');
 const mongoose = require('mongoose');
-const Users = require('./../../models/Users');
-const UserRole = require('./../../models/UserRole');
-const UsersModel = mongoose.model('Users');
+const user = require('./../../models/user');
+// const UserRole = require('./../../models/UserRole');
+// const UsersModel = mongoose.model('Users');
+
+const models = require('./../../models');
+const UserRole = require("../../old_models/mongoose/UserRole");
 
 const getTokenFromHeaders = (req) => {
     const { headers: { authorization } } = req;
@@ -27,18 +30,20 @@ const auth = {
     }),
     loadUser: (req, res, next) => {
         const { payload: { id } } = req;
-        UsersModel.findById(id).then((user) => {
+        models.Users.findOne({where: {publicId: id}}).then((user) => {
             if(!user) {
                 return res.sendStatus(400);
             }
             req.user = user;
             next();
+        }).catch(() => {
+            return res.sendStatus(400);
         });
     },
     admin: (req, res, next) => {
         if(!req.user) {
             const { payload: { id } } = req;
-            UsersModel.findById(id).then((user) => {
+            models.Users.findOne({where: {publicId: id}}).then((user) => {
                 if(!user) {
                     return res.sendStatus(400);
                 }
@@ -47,6 +52,8 @@ const auth = {
                     return res.sendStatus(403);
                 }
                 next();
+            }).catch(() => {
+                return res.sendStatus(400);
             });
         } else {
             if(!UserRole.isSuperAdmin(req.user)) {

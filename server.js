@@ -47,9 +47,9 @@ const Producer = require('./producers/index');
 Producer.start();
 
 //Models & routes
-require('./models/Users');
-require('./models/Invites');
-require('./models/PasswordRequests');
+// require('./models/Users');
+// require('./models/Invites');
+// require('./models/PasswordRequests');
 require('./config/passport');
 
 /** set up routes {API Endpoints} */
