@@ -7,7 +7,7 @@ module.exports = (router) => {
     /**
      * Post a squad
      */
-    router.post('/squads', (req, res, next) => {
+    router.post('/squads', auth.required, auth.admin, (req, res, next) => {
         squadcontroller.postSquad(req, res, next);
     });
 };

@@ -12,9 +12,16 @@ module.exports = (router) => {
     });
 
     /**
+     * get squads members
+     */
+    router.get('/squads/:squadId', auth.required, auth.squadAdmin, (req, res, next) => {
+        usercontroller.getSquad(req, res, next);
+    });
+
+    /**
      * get all users
      */
-    router.get('/users', auth.required, auth.admin, (req, res, next) => {
+    router.get('/users', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
         usercontroller.getUsers(req, res, next);
     });
 
@@ -28,7 +35,7 @@ module.exports = (router) => {
     /**
      * get a user
      */
-    router.post('/users/:id', auth.required, auth.loadUser, (req, res, next) => {
+    router.post('/users/:id', auth.required, auth.hasRightsOnUser, (req, res, next) => {
         usercontroller.postUser(req, res, next);
     });
     //

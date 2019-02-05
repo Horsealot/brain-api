@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     const Invites = sequelize.define('Invites', {
         email: DataTypes.STRING,
         token: DataTypes.STRING,
-        expiredAt: DataTypes.DATE
+        expiredAt: DataTypes.DATE,
+        squadId: DataTypes.INTEGER
     }, {
         timestamps: false
     });

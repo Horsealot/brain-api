@@ -34,6 +34,7 @@ describe('Auth', () => {
     * Test the /POST invite route
     */
     describe('/POST invite', () => {
+        const signupProducerStub = sinon.stub(notificationProducer, "signup").returns();
         it('should not accept a POST invite when not identified', (done) => {
             let body = {
                 user: {
@@ -48,39 +49,151 @@ describe('Auth', () => {
                     done();
                 });
         });
-        it('should not accept a POST invite on an existing user', (done) => {
+        it('should not accept a POST invite from a non superadmin or squad admin', (done) => {
             let body = {
                 email: "test@testuser.com"
             };
             let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            user.setRoles("ADMIN");
             user.save().then((user) => {
                 chai.request(server)
                     .post('/api/invite')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
                     .send(body)
                     .end((err, res) => {
-                        res.should.have.status(409);
+                        res.should.have.status(403);
                         done();
                     });
             })
         });
-        it('should accept a POST invite from an Admin', (done) => {
-            let body = {
-                email: "mynewuser@testuser.com"
-            };
-
-            const signupProducerStub = sinon.stub(notificationProducer, "signup").returns();
+        it('should return 404 on an unknown squad', (done) => {
             let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let squad = new models.Squads({name: 'Horsealot', slug: 'horsealot'});
             user.setRoles("ADMIN");
-            user.save().then((user) => {
+            squad.save().then(() => {
+                return user.save();
+            }).then((user) => {
                 chai.request(server)
                     .post('/api/invite')
                     .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', -1)
+                    .send({email: 'new@testuser.com'})
+                    .end((err, res) => {
+                        res.should.have.status(404);
+                        done();
+                    });
+            })
+        });
+        it('should accept a POST invite from a super admin on an existing user and add him to the squad', (done) => {
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let user2 = new models.Users({email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2'});
+            let squad = new models.Squads({name: 'Horsealot', slug: 'horsealot'});
+            user.setRoles("ADMIN");
+            squad.save().then((squad) => {
+                return user.save();
+            }).then((user) => {
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .post('/api/invite')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad.id)
+                    .send({email: user2.email})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        expect(signupProducerStub.calledOnce).to.be.false;
+                        signupProducerStub.resetHistory();
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad.id}}).then((userSquad) => {
+                            userSquad = userSquad.toJSON();
+                            userSquad.should.have.property('UserId').eql(user2.id);
+                            userSquad.should.have.property('SquadId').eql(squad.id);
+                            userSquad.should.have.property('role').eql('USER');
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should accept a POST invite from a superadmin', (done) => {
+            let body = {
+                email: "new@testuser.com"
+            };
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let squad = new models.Squads({name: 'Horsealot', slug: 'horsealot'});
+            user.setRoles("ADMIN");
+            squad.save().then(() => {
+                return user.save();
+            }).then((user) => {
+                chai.request(server)
+                    .post('/api/invite')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad.id)
                     .send(body)
                     .end((err, res) => {
-                        expect(signupProducerStub.calledOnce).to.be.true;
                         res.should.have.status(200);
+                        expect(signupProducerStub.calledOnce).to.be.true;
+                        signupProducerStub.resetHistory();
+                        models.Invites.findOne({where: {email: 'new@testuser.com', squadId: squad.id}}).then((invite) => {
+                            invite = invite.toJSON();
+                            invite.should.have.property('email').eql('new@testuser.com');
+                            invite.should.have.property('squadId').eql(squad.id);
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should accept a POST invite from a squad admin', (done) => {
+            let body = {
+                email: "new@testuser.com"
+            };
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let squad = new models.Squads({name: 'Horsealot', slug: 'horsealot'});
+            squad.save().then((squad) => {
+                return user.save();
+            }).then((user) => {
+                user.addSquad(squad, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
+                chai.request(server)
+                    .post('/api/invite')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad.id)
+                    .send(body)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        expect(signupProducerStub.calledOnce).to.be.true;
+                        signupProducerStub.resetHistory();
+                        models.Invites.findOne({where: {email: "new@testuser.com", squadId: squad.id}}).then((invite) => {
+                            invite = invite.toJSON();
+                            invite.should.have.property('email').eql('new@testuser.com');
+                            invite.should.have.property('squadId').eql(squad.id);
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should not accept a POST invite from an admin of another squad', (done) => {
+            let body = {
+                email: "new@testuser.com"
+            };
+            let user = new models.Users({email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            let squad = new models.Squads({name: 'Horsealot', slug: 'horsealot'});
+            let squad2 = new models.Squads({name: 'Horsealot2', slug: 'horsealot2'});
+            squad.save().then(() => {
+                return squad2.save();
+            }).then(() => {
+                return user.save();
+            }).then((user) => {
+                user.addSquad(squad, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
+                chai.request(server)
+                    .post('/api/invite')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad2.id)
+                    .send(body)
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        expect(signupProducerStub.calledOnce).to.be.false;
+                        signupProducerStub.resetHistory();
                         done();
                     });
             })

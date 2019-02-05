@@ -1,0 +1,15 @@
+{
+  "db": {
+    "host": "mongodb://localhost",
+    "db_name": "brain"
+  },
+  "rabbitmq": {
+    "host": "amqp://cawuvwzd:WTqqmE_73EyN61Ko9oJ1JasTzTZeymJh@bear.rmq.cloudamqp.com/cawuvwzd",
+    "queue_prefix": "prod_brain_"
+  },
+  "cloudinary": {
+    "cloud_name": "horsealot",
+    "api_key": "969834725236791",
+    "api_secret": "dAwApieoyoEkHlAqvqiciA50NWs"
+  }
+}

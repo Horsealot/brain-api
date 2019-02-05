@@ -20,6 +20,36 @@ components:
     NotFound:
       description: Resource not found
   schemas:
+    Squad:
+      description: Squad schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The squad ID.
+        name:
+          type: string
+          description: Squad's name.
+        slug:
+          type: string
+          description: Squad's slug.
+    SquadFull:
+      description: Squad schema including its members
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The squad ID.
+        name:
+          type: string
+          description: Squad's name.
+        slug:
+          type: string
+          description: Squad's slug.
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
     AuthUser:
       description: User schema when returned by an authentication endpoint
       type: object
@@ -153,11 +183,18 @@ components:
 paths:
   /invite:
     post:
-      summary: Invite a new user.
+      summary: Invite a new user. If the user is already existing, he is directly added to the squad
       tags:
       - Auth
       security:
       - bearerAuth: []
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the target squad
+        schema:
+          type: integer
+        required: true
       requestBody:
         required: true
         content:
@@ -305,25 +342,36 @@ paths:
           $ref: '#/components/responses/MissingParam'
   /users:
     get:
-      summary: Get a list of all the users.
+      summary: Get a list of all the users of the target squad. If the user is a super admin and no squad context is provided, returns a list of all the squads and their users.
       security:
       - bearerAuth: []
       tags:
       - Users
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: false
       responses:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '200':    # status code
-          description: A JSON containing the list of all the users
+          description: A JSON containing the list of all the users of the squad or all the squad for a super admin
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  users:
+                  squads:
+                    description: For a super admin
                     type: array
                     items:
-                      $ref: '#/components/schemas/AdminUser'
+                      $ref: '#/components/schemas/SquadFull'
+                  squad:
+                    description: For a squad admin
+                    $ref: '#/components/schemas/SquadFull'
   /squads:
     get:
       summary: Get a list of all the users in their respective squad.
@@ -348,6 +396,39 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                squad:
+                  type: object
+                  properties:
+                    name:
+                      description: Squad name
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new squad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/Squad'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: Squad is already existing
   /users/{userId}:
     get:
       summary: Get a single user.
@@ -388,25 +469,30 @@ paths:
               type: object
               properties:
                 firstname:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 lastname:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 picture:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 description:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 jobTitle:
-                  description: Limited to an admin
+                  description: Limited to an admin or super admin
                   type: string
                 scorecard:
-                  description: Limited to an admin
+                  description: Limited to an admin or super admin
                   type: string
                 roles:
-                  description: Limited to an admin
+                  description: Limited to a super admin
+                  type: array
+                  items:
+                    type: string
+                role:
+                  description: Limited to a squad admin or super admin
                   type: array
                   items:
                     type: string

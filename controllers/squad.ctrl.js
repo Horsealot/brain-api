@@ -1,10 +1,5 @@
 /** */
-const passport = require('passport');
 const models = require('./../models');
-const notificationProducer = require('./../producers/notifications');
-// const Users = mongoose.model('Users');
-// const Invites = mongoose.model('Invites');
-// const PasswordRequests = mongoose.model('PasswordRequests');
 
 module.exports = {
     postSquad: async (req, res, next) => {
@@ -18,19 +13,19 @@ module.exports = {
             });
         }
 
+        const newSquad = new models.Squads({
+            name: squad.name
+        });
+        newSquad.setSlug(squad.name);
 
-        let existingSquad = await models.Squads.findOne({where: {name: squad.name}});
+        let existingSquad = await models.Squads.findOne({where: {$or: [{name: squad.name}, {slug: newSquad.slug}]}});
         if(existingSquad) {
-            return res.status(401).json({
+            return res.status(409).json({
                 errors: "Squad already existing"
             });
         } else {
-            const newSquad = new models.Squads({
-                name: squad.name,
-                slug: squad.name
-            });
-            newSquad.save().then(() => {
-                res.json({ squad: newSquad.slug });
+            newSquad.save().then((newSquad) => {
+                res.json({ squad: newSquad });
             });
         }
     },

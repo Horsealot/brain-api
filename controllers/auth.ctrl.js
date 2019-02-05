@@ -11,28 +11,42 @@ const models = require('./../models');
 module.exports = {
     postInvite: async (req, res, next) => {
         const {body: {email}} = req;
+        const squadId = req.squadId;
+        let errors = {};
         if (!email) {
-            return res.status(422).json({
-                errors: {
-                    email: 'is required'
-                }
+            errors.email = 'is required';
+        }
+        if (!squadId) {
+            errors.squad = 'is required';
+        }
+        if (!email || !squadId) {
+            return res.status(422).json({ errors });
+        }
+        let squad = await models.Squads.findOne({where: {id: squadId}});
+        if(!squad) {
+            return res.status(404).json({
+                errors: "Squad does not exist"
             });
         }
         let existingUser = await models.Users.findOne({where: {email: email}});
         if(existingUser) {
-            return res.status(409).json({
-                errors: "User is already existing"
-            });
-        }
-        const invite = new models.Invites({
-            email: email
-        });
+            existingUser.addSquad(squad, {through: {role: 'USER'}});
 
-        return invite.save()
-            .then(() => {
-                notificationProducer.signup('http://localhost:3000/signup/', invite);
-                res.json({});
+            return existingUser.save().then(() => {
+                res.json({ created: 'added' });
+            })
+        } else {
+            const invite = new models.Invites({
+                email,
+                squadId
             });
+
+            return invite.save()
+                .then(() => {
+                    notificationProducer.signup('http://localhost:3000/signup/', invite);
+                    res.json({ status: 'invited' });
+                });
+        }
     },
     postSignup: async (req, res, next) => {
         const {body: {user}} = req;

@@ -5,8 +5,7 @@ const SocialMedias = "../old_models/mongoose/SocialMedias";
 const crypto = require('crypto');
 const UserRole = require("../old_models/mongoose/UserRole");
 const jwt = require('jsonwebtoken');
-const Squad = require('./squad');
-const UserSquads = require('./userSquad');
+const userRightsNomenclature = require('./../routes/tools/userRightsNomenclature.json');
 
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define('Users', {
@@ -42,7 +41,10 @@ module.exports = (sequelize, DataTypes) => {
         "firstname", "lastname", "picture", "description", "phoneNumber", "socialMedias", 'birthdate'
     ];
     const MODIFIABLE_BY_ADMIN = [
-        "jobTitle", "scorecard", "roles", "phoneNumber", "administrativeLink"
+        "jobTitle", "scorecard", "phoneNumber", "administrativeLink"
+    ];
+    const MODIFIABLE_BY_SUPER_ADMIN = [
+        "roles"
     ];
 
     User.prototype.setRoles = function(role) {
@@ -104,18 +106,25 @@ module.exports = (sequelize, DataTypes) => {
         this.jobTitle = jobTitle;
     };
 
-    User.prototype.updateFromEntity = function(newUser, fromUser, fromAdmin = false) {
+    User.prototype.updateFromEntity = function(newUser, userRights) {
         const updateStatus = Object.assign({}, newUser);
         for(let key in newUser) {
             const upperCaseKey = key.replace(/^\w/, c => c.toUpperCase());
-            if(MODIFIABLE.indexOf(key) >= 0 && fromUser) {
+            if(MODIFIABLE.indexOf(key) >= 0 && (userRights.indexOf(userRightsNomenclature.OWNER) >= 0 || userRights.indexOf(userRightsNomenclature.SUPER_ADMIN) >= 0)) {
                 if(typeof this["set" + upperCaseKey] === 'function') {
                     this["set" + upperCaseKey](newUser[key]);
                 } else {
                     this[key] = newUser[key];
                 }
                 updateStatus[key] = "updated";
-            } else if(MODIFIABLE_BY_ADMIN.indexOf(key) >= 0 && fromAdmin) {
+            } else if(MODIFIABLE_BY_ADMIN.indexOf(key) >= 0 && (userRights.indexOf(userRightsNomenclature.SQUAD_ADMIN) >= 0 || userRights.indexOf(userRightsNomenclature.SUPER_ADMIN) >= 0)) {
+                if(typeof this["set" + upperCaseKey] === 'function') {
+                    this["set" + upperCaseKey](newUser[key]);
+                } else {
+                    this[key] = newUser[key];
+                }
+                updateStatus[key] = "updated";
+            } else if(MODIFIABLE_BY_SUPER_ADMIN.indexOf(key) >= 0 && userRights.indexOf(userRightsNomenclature.SUPER_ADMIN) >= 0) {
                 if(typeof this["set" + upperCaseKey] === 'function') {
                     this["set" + upperCaseKey](newUser[key]);
                 } else {
@@ -183,7 +192,7 @@ module.exports = (sequelize, DataTypes) => {
      * @returns {{_id: *, token: *, firstname: *, lastname: *}}
      */
     User.prototype.toAuthJSON = function() {
-        return {
+        let jsonUser = {
             id: this.publicId,
             email: this.email,
             firstname: this.firstname,
@@ -193,6 +202,10 @@ module.exports = (sequelize, DataTypes) => {
             squads: this.parseSquads(),
             roles: this.roles
         };
+        if(this.squads) {
+            jsonUser.squads = this.parseSquads();
+        }
+        return jsonUser;
     };
 
     /**
@@ -200,7 +213,7 @@ module.exports = (sequelize, DataTypes) => {
      * @returns {{_id: *, email: *, firstname: *, lastname: *}}
      */
     User.prototype.toJSON = function() {
-        return {
+        let jsonUser = {
             id: this.publicId,
             createdAt: this.createdAt,
             firstname: this.firstname,
@@ -211,9 +224,12 @@ module.exports = (sequelize, DataTypes) => {
             birthdate: this.birthdate,
             jobTitle: this.jobTitle,
             phoneNumber: this.phoneNumber,
-            socialMedias: this.socialMedias,
-            squads: this.parseSquads()
+            socialMedias: this.socialMedias
         };
+        if(this.squads) {
+            jsonUser.squads = this.parseSquads();
+        }
+        return jsonUser;
     };
 
     User.prototype.parseSquads = function() {
@@ -221,13 +237,14 @@ module.exports = (sequelize, DataTypes) => {
         if(this.squads) {
             for(var i = 0; i<this.squads.length; i++) {
                 parsedSquad.push({
+                    id: this.squads[i].id,
                     name: this.squads[i].name,
                     role: this.squads[i].UserSquads.role,
                 })
             }
         }
         return parsedSquad;
-    }
+    };
 
     /**
      * Return Admin json
