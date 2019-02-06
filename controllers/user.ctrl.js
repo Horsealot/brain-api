@@ -138,6 +138,54 @@ var self = {
 
             return res.send({squads});
         })
+    },
+    postUserSquads: (req, res, next) => {
+        if(!req.body.squad || !req.body.squad.role) {
+            return res.status(422).json({
+                errors: {
+                    role: 'is required'
+                }
+            });
+        }
+        if(!req.squadId) {
+            return res.sendStatus(400);
+        }
+        const {body: {squad: {role}}} = req;
+        models.Users.findOne({where: {publicId: req.params.id}}).then((user)=> {
+            if(!user) {
+                return res.sendStatus(404)
+            }
+            models.UserSquads.findOne({where: {UserId: user.id, SquadId: req.squadId}}).then((existingUserSquad) => {
+                if(!existingUserSquad) {
+                    existingUserSquad = new models.UserSquads({UserId: user.id, SquadId: req.squadId});
+                }
+                existingUserSquad.role = role;
+                return existingUserSquad.save();
+            }).then(() => {
+                res.json({});
+            })
+        }).catch((err) => {
+            res.sendStatus(400);
+        });
+    },
+    deleteUserSquads: (req, res, next) => {
+        if(!req.squadId) {
+            return res.sendStatus(400);
+        }
+        models.Users.findOne({where: {publicId: req.params.id}}).then((user)=> {
+            if(!user) {
+                return res.sendStatus(404)
+            }
+            models.UserSquads.findOne({where: {UserId: user.id, SquadId: req.squadId}}).then((existingUserSquad) => {
+                if(existingUserSquad) {
+                    return existingUserSquad.destroy();
+                }
+            }).then(() => {
+                res.json({});
+            })
+        }).catch((err) => {
+            res.sendStatus(400);
+        });
     }
 };
 

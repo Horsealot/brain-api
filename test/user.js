@@ -915,4 +915,411 @@ describe('Auth', () => {
         });
     });
 
+    /*
+    * Test the /POST squads route
+    */
+    describe('/POST squads', () => {
+        it('should not accept a POST when unauthentified', (done) => {
+            chai.request(server)
+                .post('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should return 400 on a bad id', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                chai.request(server)
+                    .post('/api/users/1/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'USER'}})
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        done();
+                    });
+            })
+        });
+        it('should return 404 on a not found', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .post('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'USER'}})
+                    .end((err, res) => {
+                        res.should.have.status(404);
+                        done();
+                    });
+            })
+        });
+        it('should return 422 if the role is missing', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .post('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({})
+                    .end((err, res) => {
+                        res.should.have.status(422);
+                        done();
+                    });
+            })
+        });
+        it('should return 403 if user is not allowed', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .post('/api/users/' + user.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'USER'}})
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        done();
+                    });
+            })
+        });
+        it('should add the user to the squad when the request come from a super admin', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .post('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'USER'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.an('object');
+                            userSquad = userSquad.toJSON();
+                            userSquad.should.be.a('object');
+                            userSquad.should.have.property('role').eql("USER");
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should update the role if when the request come from a super admin and the user is already in the squad', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                user2.addSquad(squad1, {through: {role: 'USER'}});
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .post('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'ADMIN'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.an('object');
+                            userSquad = userSquad.toJSON();
+                            userSquad.should.be.a('object');
+                            userSquad.should.have.property('role').eql("ADMIN");
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should add the user to the squad when the request come from a squad admin', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["USER"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user) => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
+                chai.request(server)
+                    .post('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'USER'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.an('object');
+                            userSquad = userSquad.toJSON();
+                            userSquad.should.be.a('object');
+                            userSquad.should.have.property('role').eql("USER");
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should update the role if when the request come from a squad admin and the user is already in the squad', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["USER"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
+                user2.addSquad(squad1, {through: {role: 'USER'}});
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .post('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'ADMIN'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.an('object');
+                            userSquad = userSquad.toJSON();
+                            userSquad.should.be.a('object');
+                            userSquad.should.have.property('role').eql("ADMIN");
+                            done();
+                        });
+                    });
+            })
+        });
+    });
+
+    /*
+    * Test the /DELETE squads route
+    */
+    describe('/DELETE squads', () => {
+        it('should not accept a DELETE when unauthentified', (done) => {
+            chai.request(server)
+                .delete('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should return 400 on a bad id', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                chai.request(server)
+                    .delete('/api/users/1/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        done();
+                    });
+            })
+        });
+        it('should return 404 on a not found', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .delete('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(404);
+                        done();
+                    });
+            })
+        });
+        it('should return 403 if the squadId is missing', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .delete('/api/users/f421f06e-8af2-4a3b-a64e-01725e46368a/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        done();
+                    });
+            })
+        });
+        it('should return 403 if user is not allowed', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .delete('/api/users/' + user.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        done();
+                    });
+            })
+        });
+        it('should do nothing if the user is not in the squad and the request come from a super admin', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .delete('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.null;
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should remove the user from the squad when the request come from a super admin and the user is in the squad', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["ADMIN"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                user2.addSquad(squad1, {through: {role: 'USER'}});
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .delete('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'ADMIN'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.null;
+                            done();
+                        });
+                    });
+            })
+        });
+        it('should remove the user from the squad when the request come from a squad admin and the user is in the squad', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User', roles: ["USER"]});
+            let user2 = new models.Users({ email: "test2@testuser.com", password: "testpassword", firstname: 'Test2', lastname: 'User2', roles: ["USER"]});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user.save().then((user) => {
+                return squad1.save();
+            }).then((squad1) => {
+                return user2.save();
+            }).then((user2) => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then((user) => {
+                user2.addSquad(squad1, {through: {role: 'USER'}});
+                return user2.save();
+            }).then((user2) => {
+                chai.request(server)
+                    .delete('/api/users/' + user2.publicId + '/squads')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send({squad: {role: 'ADMIN'}})
+                    .end((err, res) => {
+                        res.should.have.status(200);
+
+                        models.UserSquads.findOne({where: {UserId: user2.id, SquadId: squad1.id}}).then((userSquad) => {
+                            expect(userSquad).to.be.null;
+                            done();
+                        });
+                    });
+            })
+        });
+    });
+
 });

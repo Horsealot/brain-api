@@ -26,6 +26,20 @@ module.exports = (router) => {
     });
 
     /**
+     * Add/Edit a user to a squad
+     */
+    router.post('/users/:id/squads', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
+        usercontroller.postUserSquads(req, res, next);
+    });
+
+    /**
+     * Remove a user from a squad
+     */
+    router.delete('/users/:id/squads', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
+        usercontroller.deleteUserSquads(req, res, next);
+    });
+
+    /**
      * get a user
      */
     router.get('/users/:id', auth.required, auth.loadUser, (req, res, next) => {

@@ -19,6 +19,10 @@ components:
       description: A parameter is missing
     NotFound:
       description: Resource not found
+    BadRequest:
+      description: Bad request
+    UnauthorizedAccess:
+      description: User cannot access this resource
   schemas:
     Squad:
       description: Squad schema
@@ -520,3 +524,86 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+  /users/{userId}/squads:
+    delete:
+      summary: Remove a user from a squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to remove
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: User has been removed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Add a user to a squad or modify his role.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                squad:
+                  type: object
+                  properties:
+                    role:
+                      description: User role in the squad
+                      type: string
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/MissingParam'
