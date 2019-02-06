@@ -30,10 +30,16 @@ module.exports = {
         }
         let existingUser = await models.Users.findOne({where: {email: email}});
         if(existingUser) {
+            const existingUserSquad = await models.UserSquads.findOne({where: {UserId: existingUser.id, SquadId: squadId}});
+            if(existingUserSquad) {
+                return res.status(409).json({
+                    errors: "User already in the squad"
+                });;
+            }
             existingUser.addSquad(squad, {through: {role: 'USER'}});
 
             return existingUser.save().then(() => {
-                res.json({ created: 'added' });
+                res.json({ created: 'added', user: {...existingUser.toAdminJSON(), role: 'USER'} });
             })
         } else {
             const invite = new models.Invites({
