@@ -18,6 +18,10 @@ chai.use(chaiHttp);
 describe('Auth', () => {
     beforeEach((done) => { //Before each test we empty the database
         models.PasswordRequests.destroy({where: {}}).then(() => {
+            return models.Tools.destroy({where: {}});
+        }).then(() => {
+            return models.ToolCategories.destroy({where: {}});
+        }).then(() => {
             return models.Invites.destroy({where: {}});
         }).then(() => {
             return models.UserSquads.destroy({where: {}});

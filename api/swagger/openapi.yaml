@@ -626,3 +626,197 @@ paths:
                     $ref: '#/components/schemas/AdminUser'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+  /tools/category:
+    post:
+      summary: Create or update a category.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: object
+                  properties:
+                    id:
+                      description: Category id (if modification)
+                      type: string
+                    name:
+                      description: Category name
+                      type: string
+                    order:
+                      description: Category order
+                      type: number
+                    squadId:
+                      description: Category's squad (for admin only)
+                      type: number
+      responses:
+        '200':    # status code
+          description: A JSON containing the new category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown squad'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /tools/category/${categoryId}:
+    delete:
+      summary: Delete a category.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: categoryId
+        schema:
+          type: string
+        required: true
+        description: ID of the category to update
+      tags:
+      - Tools
+      responses:
+        '200':    # status code
+          description: Category deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+  /tools:
+    post:
+      summary: Create a tool.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: object
+                  properties:
+                    categoryId:
+                      description: Category id
+                      type: string
+                    name:
+                      description: Tool name
+                      type: string
+                    icon:
+                      description: Tool name
+                      type: string
+                    link:
+                      description: Tool link
+                      type: string
+                    order:
+                      description: Tool order
+                      type: number
+      responses:
+        '200':    # status code
+          description: A JSON containing the new category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown category'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /tools/${toolId}:
+    post:
+      summary: Update a tool.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: object
+                  properties:
+                    name:
+                      description: Tool name
+                      type: string
+                    icon:
+                      description: Tool name
+                      type: string
+                    link:
+                      description: Tool link
+                      type: string
+                    order:
+                      description: Tool order
+                      type: number
+      responses:
+        '200':    # status code
+          description: A JSON containing the new tool
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a category.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to delete
+      responses:
+        '200':    # status code
+          description: Tool deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'

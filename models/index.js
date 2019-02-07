@@ -41,12 +41,51 @@ db.Squads.belongsToMany(db.Users, { through: db.UserSquads, as: 'users' });
 db.Users.hasMany(db.PasswordRequests, {
     foreignKey: 'UserId',
     sourceKey: 'id',
-    as: 'user'
+    as: 'user',
+    onDelete: 'CASCADE',
+    hooks: true
 });
 db.PasswordRequests.belongsTo(db.Users, {
     foreignKey: 'UserId',
     sourceKey: 'id',
-    as: 'user'
+    as: 'user',
+});
+
+db.Users.hasMany(db.ToolCategories, {
+    foreignKey: 'UserId',
+    sourceKey: 'id',
+    as: 'toolCategories',
+});
+db.ToolCategories.belongsTo(db.Users, {
+    foreignKey: 'UserId',
+    sourceKey: 'id',
+    as: 'user',
+});
+
+db.Squads.hasMany(db.ToolCategories, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'toolCategories',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.ToolCategories.belongsTo(db.Squads, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'squad',
+});
+
+db.ToolCategories.hasMany(db.Tools, {
+    foreignKey: 'CategoryId',
+    sourceKey: 'id',
+    as: 'tools',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.Tools.belongsTo(db.ToolCategories, {
+    foreignKey: 'CategoryId',
+    sourceKey: 'id',
+    as: 'category',
 });
 
 module.exports = db;

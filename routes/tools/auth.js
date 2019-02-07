@@ -150,8 +150,8 @@ const auth = {
         if(squadId) {
             req.squadId = squadId;
             if (!UserRole.isSuperAdmin(req.user)) {
-                const userRoleInSquad = await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: squadId}});
-                if(!userRoleInSquad || userRoleInSquad.role !== 'ADMIN') {
+                const userRoleInSquad = await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: squadId, role: 'ADMIN'}});
+                if(!userRoleInSquad) {
                     return res.sendStatus(403);
                 }
                 req.userRights.push(userRightsNomenclature.SQUAD_ADMIN);
