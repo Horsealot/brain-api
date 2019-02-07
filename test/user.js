@@ -29,6 +29,53 @@ describe('Auth', () => {
     });
 
     /*
+    * Test the /GET me route
+    */
+    describe('/GET me', () => {
+        it('should not accept a GET when unauthentified', (done) => {
+            chai.request(server)
+                .get('/api/me')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should accept a GET from a user', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            squad1.save().then(() => {
+                return user.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'USER'}});
+                return user.save();
+            }).then(() => {
+                chai.request(server)
+                    .get('/api/me')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('user');
+                        res.body.user.should.be.a('object');
+                        res.body.user.should.have.property('firstname').eql(user.firstname);
+                        res.body.user.should.have.property('lastname').eql(user.lastname);
+                        res.body.user.should.have.property('email').eql(user.email);
+                        res.body.user.should.not.have.property('token');
+                        res.body.user.should.not.have.property('password');
+
+                        done();
+                    });
+            })
+        });
+    });
+
+    /*
     * Test the /GET users route
     */
     describe('/GET users', () => {
@@ -718,7 +765,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('jobTitle').eql("updated");
                         res.body.user.should.have.property('scorecard').eql("updated");
                         res.body.user.should.have.property('roles').eql("updated");
-                        res.body.user.should.have.property('squads').eql("updated");
+                        res.body.user.should.have.property('squads').eql("not allowed");
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.not.property('email');
 
@@ -735,7 +782,7 @@ describe('Auth', () => {
                             user.should.have.property('roles').that.includes("ADMIN");
                             user.should.have.property('roles').that.not.includes("OTHER");
                             user.should.have.property('squads');
-                            user.squads.should.contains({ id: squad1.id, name: 'squad1', role: 'USER' });
+                            user.squads.should.contains({ id: squad1.id, name: 'squad1', role: 'ADMIN' });
                             done();
                         });
                     });
@@ -811,7 +858,7 @@ describe('Auth', () => {
                         res.body.user.should.have.property('jobTitle').eql("updated");
                         res.body.user.should.have.property('scorecard').eql("updated");
                         res.body.user.should.have.property('roles').eql("not allowed");
-                        res.body.user.should.have.property('role').eql("updated");
+                        res.body.user.should.have.property('role').eql("not allowed");
                         res.body.user.should.have.not.property('token');
                         res.body.user.should.have.not.property('email');
 
@@ -829,7 +876,7 @@ describe('Auth', () => {
                             user.should.have.property('squads');
 
                             user.squads.should.contains({ id: squad3.id, name: 'squad3', role: 'USER' });
-                            user.squads.should.contains({ id: squad1.id, name: 'squad1', role: 'ADMIN' });
+                            user.squads.should.contains({ id: squad1.id, name: 'squad1', role: 'USER' });
                             done();
                         });
                     });

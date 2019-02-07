@@ -192,20 +192,9 @@ module.exports = (sequelize, DataTypes) => {
      * @returns {{_id: *, token: *, firstname: *, lastname: *}}
      */
     User.prototype.toAuthJSON = function() {
-        let jsonUser = {
-            id: this.publicId,
-            email: this.email,
-            firstname: this.firstname,
-            lastname: this.lastname,
-            createdAt: this.createdAt,
+        return { ...this.toAdminJSON(),
             token: this.generateJWT(),
-            squads: this.parseSquads(),
-            roles: this.roles
         };
-        if(this.squads) {
-            jsonUser.squads = this.parseSquads();
-        }
-        return jsonUser;
     };
 
     /**

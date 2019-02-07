@@ -607,3 +607,22 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/MissingParam'
+  /me:
+    get:
+      summary: Get logged in user.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      responses:
+        '200':    # status code
+          description: A JSON containing the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

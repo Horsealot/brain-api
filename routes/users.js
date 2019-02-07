@@ -26,6 +26,13 @@ module.exports = (router) => {
     });
 
     /**
+     * get my user
+     */
+    router.get('/me', auth.required, auth.loadUser, (req, res, next) => {
+        usercontroller.getMe(req, res, next);
+    });
+
+    /**
      * Add/Edit a user to a squad
      */
     router.post('/users/:id/squads', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
