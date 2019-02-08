@@ -96,16 +96,53 @@ var self = {
         });
     },
     getTools: (req, res, next) => {
-        models.Squads.findOne({where: {id: req.squadId}, include: ['users']}).then((squad) => {
-            return res.sendStatus(404);
-            return res.send({squad: response});
-        }).catch((err) => {
-            res.sendStatus(500);
-        });
+        if(!req.squadId) {
+            return res.sendStatus(403);
+        }
+        let categories = [];
+        models.ToolCategories.findAll({where: {SquadId: req.squadId}, include: ['tools']}).then((squadCategories) => {
+            if(squadCategories) {
+                squadCategories.forEach((squadCategory) => {
+                    categories.push({
+                        id: squadCategory.id,
+                        name: squadCategory.name,
+                        isSquad: true,
+                        tools: squadCategory.tools.map((tool) => {
+                            return {
+                                id: tool.id,
+                                name: tool.name,
+                                link: tool.link,
+                                icon: tool.icon
+                            }
+                        })
+                    });
+                })
+            }
+            return models.ToolCategories.findAll({where: {UserId: req.user.id}, include: ['tools']})
+        }).then((userCategories) => {
+            if(userCategories) {
+                userCategories.forEach((userCategory) => {
+                    categories.push({
+                        id: userCategory.id,
+                        name: userCategory.name,
+                        isSquad: false,
+                        tools: userCategory.tools.map((tool) => {
+                            return {
+                                id: tool.id,
+                                name: tool.name,
+                                link: tool.link,
+                                icon: tool.icon
+                            }
+                        })
+                    });
+                })
+            }
+            return res.json({categories});
+        })
     },
     postTools: async (req, res, next) => {
         const {body: {tool}} = req;
-        if (!tool.categoryId) {
+        if (!tool || !tool.categoryId) {
             return res.status(422).json({
                 errors: {
                     category: 'is required'

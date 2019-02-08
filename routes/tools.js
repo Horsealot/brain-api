@@ -28,7 +28,7 @@ module.exports = (router) => {
     /**
      * Get user tools
      */
-    router.get('/tools', auth.required, auth.loadUser, (req, res, next) => {
+    router.get('/tools', auth.required, auth.loadUser, auth.loadSquadId, (req, res, next) => {
         toolcontroller.getTools(req, res, next);
     });
 

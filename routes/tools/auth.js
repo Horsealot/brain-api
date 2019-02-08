@@ -58,6 +58,10 @@ const auth = {
             return res.sendStatus(400);
         });
     },
+    loadSquadId: (req, res, next) => {
+        req.squadId = getSquadFromHeaders(req);
+        next();
+    },
     admin: (req, res, next) => {
         if(!req.user) {
             const { payload: { id } } = req;
