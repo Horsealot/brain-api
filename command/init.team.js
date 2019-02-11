@@ -45,10 +45,19 @@ const baseUsers = [
 ]
 
 
-let processUserPromises = [];
+
+let processPromises = [];
+
+let horsealotSquad = new models.Squads({name: 'Horsealot'});
+processPromises.push((callback) => {
+    horsealotSquad.save().then(() => {
+        callback();
+    })
+})
+
 for (let i = 0; i < baseUsers.length; i++) {
     const user = baseUsers[i];
-    processUserPromises.push((callback) => {
+    processPromises.push((callback) => {
         models.Users.findOne({where: {email: user.email}}).then((existingUser) => {
             if(!existingUser) {
                 existingUser = new models.Users(user);
@@ -68,7 +77,7 @@ for (let i = 0; i < baseUsers.length; i++) {
         })
     })
 }
-async.waterfall(processUserPromises, () => {
+async.waterfall(processPromises, () => {
     console.log(`All users created`);
     process.exit(1);
 });

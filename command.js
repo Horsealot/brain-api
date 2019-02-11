@@ -8,6 +8,11 @@ const availableCommands = [
         file: 'init.team',
         cmd: 'init-team',
         description: 'Init basic team members'
+    },
+    {
+        file: 'create.squad',
+        cmd: 'create-squad',
+        description: 'Create an empty squad ${SQUAD_NAME}'
     }
 ];
 

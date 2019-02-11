@@ -32,5 +32,11 @@ module.exports = (sequelize, DataTypes) => {
             ;
     };
 
+    Squads.beforeUpdate(function(user) {
+        if(!user.slug) {
+            user.setSlug(user.name)
+        }
+    });
+
   return Squads;
 };
