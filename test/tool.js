@@ -1079,4 +1079,159 @@ describe('Tools', () => {
             });
         });
     });
+
+    /*
+    * Test the /GET tools route
+    */
+    describe('/GET tools', () => {
+        it('should not accept a GET when unauthentified', (done) => {
+            chai.request(server)
+                .get('/api/tools')
+                .send()
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    done();
+                });
+        });
+        it('should not accept a GET without a squad', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            user.save().then((user) => {
+                chai.request(server)
+                    .get('/api/users')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        done();
+                    });
+            })
+        });
+        it('should accept a GET from a squad member and return all tools', (done) => {
+            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
+            const squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            let userCategory1 = new models.ToolCategories({name: 'user1', order: 3});
+            let toolUserCategory1 = new models.Tools({name: 'toolUserCategory1', icon: 'userIcon1', link: 'userLink1', order: 1});
+            let toolUserCategory2 = new models.Tools({name: 'toolUserCategory2', icon: 'userIcon2', link: 'userLink2', order: 2});
+            let userCategory2 = new models.ToolCategories({name: 'user2', order: 1});
+            let toolUserCategory21 = new models.Tools({name: 'toolUserCategory21', icon: 'userIcon21', link: 'userLink21', order: 4});
+            let toolUserCategory22 = new models.Tools({name: 'toolUserCategory22', icon: 'userIcon22', link: 'userLink22', order: 1});
+            let squadCategory1 = new models.ToolCategories({name: 'squad1', order: 1});
+            let toolSquad1 = new models.Tools({name: 'toolSquad1', icon: 'squadIcon1', link: 'squadLink1', order: 1});
+            let toolSquad2 = new models.Tools({name: 'toolSquad2', icon: 'squadIcon2', link: 'squadLink2', order: 2});
+            let squadCategory2 = new models.ToolCategories({name: 'squad2', order: 12});
+            let toolSquad21 = new models.Tools({name: 'toolSquad21', icon: 'squadIcon21', link: 'squadLink21', order: 5});
+            let toolSquad22 = new models.Tools({name: 'toolSquad22', icon: 'squadIcon22', link: 'squadLink22', order: 1});
+            squad1.save().then((squad1) => {
+                return user.save();
+            }).then(() => {
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
+                return user.save();
+            }).then(() => {
+                userCategory1.UserId = user.id;
+                return userCategory1.save();
+            }).then(() => {
+                userCategory2.UserId = user.id;
+                return userCategory2.save();
+            }).then(() => {
+                squadCategory1.SquadId = squad1.id;
+                return squadCategory1.save();
+            }).then(() => {
+                squadCategory2.SquadId = squad1.id;
+                return squadCategory2.save();
+            }).then(() => {
+                toolUserCategory1.CategoryId = userCategory1.id;
+                return toolUserCategory1.save();
+            }).then(() => {
+                toolUserCategory2.CategoryId = userCategory1.id;
+                return toolUserCategory2.save();
+            }).then(() => {
+                toolUserCategory21.CategoryId = userCategory2.id;
+                return toolUserCategory21.save();
+            }).then(() => {
+                toolUserCategory22.CategoryId = userCategory2.id;
+                return toolUserCategory22.save();
+            }).then(() => {
+                toolSquad1.CategoryId = squadCategory1.id;
+                return toolSquad1.save();
+            }).then(() => {
+                toolSquad2.CategoryId = squadCategory1.id;
+                return toolSquad2.save();
+            }).then(() => {
+                toolSquad21.CategoryId = squadCategory2.id;
+                return toolSquad21.save();
+            }).then(() => {
+                toolSquad22.CategoryId = squadCategory2.id;
+                return toolSquad22.save();
+            }).then(() => {
+                chai.request(server)
+                    .get('/api/tools')
+                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
+                    .set('Brain-squad', squad1.id)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('categories');
+                        res.body.categories.should.be.a('array');
+                        res.body.categories[0].should.have.property('id').eql(squadCategory1.id);
+                        res.body.categories[0].should.have.property('name').eql(squadCategory1.name);
+                        res.body.categories[0].should.have.property('isSquad').eql(true);
+                        res.body.categories[0].should.have.property('tools');
+                        res.body.categories[0].tools.should.be.a('array');
+                        res.body.categories[0].tools[0].should.have.property('id').eql(toolSquad1.id);
+                        res.body.categories[0].tools[0].should.have.property('name').eql(toolSquad1.name);
+                        res.body.categories[0].tools[0].should.have.property('icon').eql(toolSquad1.icon);
+                        res.body.categories[0].tools[0].should.have.property('link').eql(toolSquad1.link);
+                        res.body.categories[0].tools[1].should.have.property('id').eql(toolSquad2.id);
+                        res.body.categories[0].tools[1].should.have.property('name').eql(toolSquad2.name);
+                        res.body.categories[0].tools[1].should.have.property('icon').eql(toolSquad2.icon);
+                        res.body.categories[0].tools[1].should.have.property('link').eql(toolSquad2.link);
+                        res.body.categories[1].should.have.property('id').eql(squadCategory2.id);
+                        res.body.categories[1].should.have.property('name').eql(squadCategory2.name);
+                        res.body.categories[1].should.have.property('isSquad').eql(true);
+                        res.body.categories[1].should.have.property('tools');
+                        res.body.categories[1].tools.should.be.a('array');
+                        res.body.categories[1].tools[0].should.have.property('id').eql(toolSquad22.id);
+                        res.body.categories[1].tools[0].should.have.property('name').eql(toolSquad22.name);
+                        res.body.categories[1].tools[0].should.have.property('icon').eql(toolSquad22.icon);
+                        res.body.categories[1].tools[0].should.have.property('link').eql(toolSquad22.link);
+                        res.body.categories[1].tools[1].should.have.property('id').eql(toolSquad21.id);
+                        res.body.categories[1].tools[1].should.have.property('name').eql(toolSquad21.name);
+                        res.body.categories[1].tools[1].should.have.property('icon').eql(toolSquad21.icon);
+                        res.body.categories[1].tools[1].should.have.property('link').eql(toolSquad21.link);
+                        res.body.categories[2].should.have.property('id').eql(userCategory2.id);
+                        res.body.categories[2].should.have.property('name').eql(userCategory2.name);
+                        res.body.categories[2].should.have.property('isSquad').eql(false);
+                        res.body.categories[2].should.have.property('tools');
+                        res.body.categories[2].tools.should.be.a('array');
+                        res.body.categories[2].tools[0].should.have.property('id').eql(toolUserCategory22.id);
+                        res.body.categories[2].tools[0].should.have.property('name').eql(toolUserCategory22.name);
+                        res.body.categories[2].tools[0].should.have.property('icon').eql(toolUserCategory22.icon);
+                        res.body.categories[2].tools[0].should.have.property('link').eql(toolUserCategory22.link);
+                        res.body.categories[2].tools[1].should.have.property('id').eql(toolUserCategory21.id);
+                        res.body.categories[2].tools[1].should.have.property('name').eql(toolUserCategory21.name);
+                        res.body.categories[2].tools[1].should.have.property('icon').eql(toolUserCategory21.icon);
+                        res.body.categories[2].tools[1].should.have.property('link').eql(toolUserCategory21.link);
+                        res.body.categories[3].should.have.property('id').eql(userCategory1.id);
+                        res.body.categories[3].should.have.property('name').eql(userCategory1.name);
+                        res.body.categories[3].should.have.property('isSquad').eql(false);
+                        res.body.categories[3].should.have.property('tools');
+                        res.body.categories[3].tools.should.be.a('array');
+                        res.body.categories[3].tools[0].should.have.property('id').eql(toolUserCategory1.id);
+                        res.body.categories[3].tools[0].should.have.property('name').eql(toolUserCategory1.name);
+                        res.body.categories[3].tools[0].should.have.property('icon').eql(toolUserCategory1.icon);
+                        res.body.categories[3].tools[0].should.have.property('link').eql(toolUserCategory1.link);
+                        res.body.categories[3].tools[1].should.have.property('id').eql(toolUserCategory2.id);
+                        res.body.categories[3].tools[1].should.have.property('name').eql(toolUserCategory2.name);
+                        res.body.categories[3].tools[1].should.have.property('icon').eql(toolUserCategory2.icon);
+                        res.body.categories[3].tools[1].should.have.property('link').eql(toolUserCategory2.link);
+                        done();
+                    });
+            })
+        });
+    });
 });

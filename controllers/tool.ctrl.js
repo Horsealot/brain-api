@@ -100,7 +100,7 @@ var self = {
             return res.sendStatus(403);
         }
         let categories = [];
-        models.ToolCategories.findAll({where: {SquadId: req.squadId}, include: ['tools']}).then((squadCategories) => {
+        models.ToolCategories.findAll({where: {SquadId: req.squadId}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]}).then((squadCategories) => {
             if(squadCategories) {
                 squadCategories.forEach((squadCategory) => {
                     categories.push({
@@ -118,7 +118,7 @@ var self = {
                     });
                 })
             }
-            return models.ToolCategories.findAll({where: {UserId: req.user.id}, include: ['tools']})
+            return models.ToolCategories.findAll({where: {UserId: req.user.id}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]})
         }).then((userCategories) => {
             if(userCategories) {
                 userCategories.forEach((userCategory) => {

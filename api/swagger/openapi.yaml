@@ -24,6 +24,47 @@ components:
     UnauthorizedAccess:
       description: User cannot access this resource
   schemas:
+    Tools:
+      description: Tools schema
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolCategory'
+    ToolCategory:
+      description: Tool category schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The category ID.
+        isSquad:
+          type: boolean
+          description: Is category linked to a squad
+        name:
+          type: string
+          description: Category's name.
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+    Tool:
+      description: Tool schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The tool ID.
+        icon:
+          type: string
+          description: Tool's icon.
+        link:
+          type: string
+          description: Tool's link.
+        name:
+          type: string
+          description: Tool's name.
     Squad:
       description: Squad schema
       type: object
@@ -695,37 +736,41 @@ paths:
         '403':
           $ref: '#/components/responses/UnauthorizedAccess'
   /tools:
+    get:
+      summary: Get user's tools.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ToolCategory'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
     post:
       summary: Create a tool.
       security:
       - bearerAuth: []
       tags:
       - Tools
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                category:
-                  type: object
-                  properties:
-                    categoryId:
-                      description: Category id
-                      type: string
-                    name:
-                      description: Tool name
-                      type: string
-                    icon:
-                      description: Tool name
-                      type: string
-                    link:
-                      description: Tool link
-                      type: string
-                    order:
-                      description: Tool order
-                      type: number
       responses:
         '200':    # status code
           description: A JSON containing the new category
@@ -769,16 +814,16 @@ paths:
                   type: object
                   properties:
                     name:
-                      description: Tool name
+                      description: Tool's name
                       type: string
                     icon:
-                      description: Tool name
+                      description: Tool's name
                       type: string
                     link:
-                      description: Tool link
+                      description: Tool's link
                       type: string
                     order:
-                      description: Tool order
+                      description: Tool's order
                       type: number
       responses:
         '200':    # status code
