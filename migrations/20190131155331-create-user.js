@@ -19,7 +19,8 @@ module.exports = {
         type: Sequelize.STRING
       },
       email: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        unique: true
       },
       createdAt: {
         allowNull: false,
@@ -67,7 +68,7 @@ module.exports = {
       administrativeLink: {
         type: Sequelize.STRING
       },
-        roles: {
+      roles: {
         type: Sequelize.ARRAY(Sequelize.STRING)
       },
     });
