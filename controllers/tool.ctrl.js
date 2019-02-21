@@ -4,7 +4,7 @@ const UserRole = require("../old_models/mongoose/UserRole");
 var self = {
     postCategory: async (req, res, next) => {
         const {body: {category}} = req;
-        if (!category.name) {
+        if (!category || !category.name) {
             return res.status(422).json({
                 errors: {
                     name: 'is required'

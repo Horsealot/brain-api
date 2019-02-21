@@ -11,5 +11,8 @@
     "cloud_name": "horsealot",
     "api_key": "969834725236791",
     "api_secret": "dAwApieoyoEkHlAqvqiciA50NWs"
+  },
+  "kpi-board": {
+    "host": "http://localhost:5001/api"
   }
 }

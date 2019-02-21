@@ -10,26 +10,13 @@ let should = chai.should();
 let sinon = require('sinon');
 
 const models = require('./../models');
+const preTest = require('./preTest');
 
 chai.use(chaiHttp);
 //Our parent block
 describe('Squad', () => {
     beforeEach((done) => { //Before each test we empty the database
-        models.PasswordRequests.destroy({where: {}}).then(() => {
-            return models.Tools.destroy({where: {}});
-        }).then(() => {
-            return models.ToolCategories.destroy({where: {}});
-        }).then(() => {
-            return models.Invites.destroy({where: {}});
-        }).then(() => {
-            return models.UserSquads.destroy({where: {}});
-        }).then(() => {
-            return models.Users.destroy({where: {}});
-        }).then(() => {
-            return models.Squads.destroy({where: {}});
-        }).then(() => {
-            done();
-        })
+        preTest.cleanDB(done);
     });
 
     /*

@@ -191,6 +191,22 @@ module.exports = (sequelize, DataTypes) => {
     };
 
     /**
+     * Generate JWT for authenticating with other microservices
+     * @returns {*}
+     */
+    User.prototype.generateMicroserviceJWT = function() {
+        const today = new Date();
+        const expirationDate = new Date(today);
+        expirationDate.setDate(today.getDate() + 60);
+
+        return jwt.sign({
+            type: 'user',
+            id: this.publicId,
+            exp: parseInt(expirationDate.getTime() / 1000, 10),
+        }, 'secret');
+    };
+
+    /**
      * Return auth json
      * @returns {{_id: *, token: *, firstname: *, lastname: *}}
      */

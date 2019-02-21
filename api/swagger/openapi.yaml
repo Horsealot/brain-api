@@ -225,6 +225,88 @@ components:
           description: User's roles.
           items:
             type: string
+    SimpleDashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+    Dashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: Module's id
+                type: string
+              type:
+                description: Module's type
+                type: string
+              order:
+                description: Module's order
+                type: number
+              width:
+                description: Module's width (1,2,3,4)
+                type: number
+              properties:
+                description: Module's properties
+                type: string
+    DisplayedDashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: Module's id
+                type: string
+              type:
+                description: Module's type
+                type: string
+              width:
+                description: Module's width (1,2,3,4)
+                type: number
+              data:
+                description: Module's data
+                type: string
 paths:
   /invite:
     post:
@@ -865,3 +947,189 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
           description: 'Unknown tool'
+  /dashboards:
+    get:
+      summary: Get a list of dashboards.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SimpleDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboard:
+                  type: object
+                  properties:
+                    name:
+                      description: Dashboard's name
+                      type: string
+                    squadId:
+                      description: Dashboard's squad
+                      type: string
+                    productId:
+                      description: Dashboard's product
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /dashboards/:id:
+    get:
+      summary: Get a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Update a dashboard and its component.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboard:
+                  type: object
+                  properties:
+                    name:
+                      description: Dashboard's name
+                      type: string
+                    squadId:
+                      description: Dashboard's squad
+                      type: string
+                    productId:
+                      description: Dashboard's product
+                      type: string
+                    modules:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            description: Module's type
+                            type: string
+                          order:
+                            description: Module's order
+                            type: number
+                          width:
+                            description: Module's width (1,2,3,4)
+                            type: number
+                          properties:
+                            description: Module's properties
+                            type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new tool
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Dashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to delete
+      responses:
+        '200':    # status code
+          description: Dashboard deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tdashboardool'

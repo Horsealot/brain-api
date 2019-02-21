@@ -10,73 +10,13 @@ let should = chai.should();
 let sinon = require('sinon');
 
 const models = require('./../models');
+const preTest = require('./preTest');
 
 chai.use(chaiHttp);
 //Our parent block
 describe('Auth', () => {
     beforeEach((done) => { //Before each test we empty the database
-        models.PasswordRequests.destroy({where: {}}).then(() => {
-            return models.Tools.destroy({where: {}});
-        }).then(() => {
-            return models.ToolCategories.destroy({where: {}});
-        }).then(() => {
-            return models.Invites.destroy({where: {}});
-        }).then(() => {
-            return models.UserSquads.destroy({where: {}});
-        }).then(() => {
-            return models.Users.destroy({where: {}});
-        }).then(() => {
-            return models.Squads.destroy({where: {}});
-        }).then(() => {
-            done();
-        })
-    });
-
-    /*
-    * Test the /GET me route
-    */
-    describe('/GET me', () => {
-        it('should not accept a GET when unauthentified', (done) => {
-            chai.request(server)
-                .get('/api/me')
-                .send()
-                .end((err, res) => {
-                    res.should.have.status(401);
-                    done();
-                });
-        });
-        it('should accept a GET from a user', (done) => {
-            let user = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test', lastname: 'User'});
-            const squad1 = new models.Squads({
-                name: 'squad1',
-                slug: 'squad1'
-            });
-            squad1.save().then(() => {
-                return user.save();
-            }).then(() => {
-                user.addSquad(squad1, {through: {role: 'USER'}});
-                return user.save();
-            }).then(() => {
-                chai.request(server)
-                    .get('/api/me')
-                    .set('Authorization', 'Bearer ' + user.toAuthJSON().token)
-                    .send()
-                    .end((err, res) => {
-                        res.should.have.status(200);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('user');
-                        res.body.user.should.be.a('object');
-                        res.body.user.should.have.property('firstname').eql(user.firstname);
-                        res.body.user.should.have.property('lastname').eql(user.lastname);
-                        res.body.user.should.have.property('email').eql(user.email);
-                        res.body.user.should.not.have.property('token');
-                        res.body.user.should.not.have.property('password');
-
-                        done();
-                    });
-            })
-        });
+        preTest.cleanDB(done);
     });
 
     /*

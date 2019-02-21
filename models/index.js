@@ -88,4 +88,43 @@ db.Tools.belongsTo(db.ToolCategories, {
     as: 'category',
 });
 
+db.Squads.hasMany(db.Dashboards, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'dashboards',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.Dashboards.belongsTo(db.Squads, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'squad',
+});
+
+db.Products.hasMany(db.Dashboards, {
+    foreignKey: 'ProductId',
+    sourceKey: 'id',
+    as: 'dashboards',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.Dashboards.belongsTo(db.Products, {
+    foreignKey: 'ProductId',
+    sourceKey: 'id',
+    as: 'product',
+});
+
+db.Dashboards.hasMany(db.DashboardModules, {
+    foreignKey: 'DashboardId',
+    sourceKey: 'id',
+    as: 'modules',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.DashboardModules.belongsTo(db.Dashboards, {
+    foreignKey: 'DashboardId',
+    sourceKey: 'id',
+    as: 'dashboard',
+});
+
 module.exports = db;
