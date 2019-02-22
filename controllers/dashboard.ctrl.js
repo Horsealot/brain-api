@@ -1,6 +1,8 @@
 const models = require('./../models');
 const UserRole = require("../old_models/mongoose/UserRole");
 const kpiService = require('./../services/kpi.service');
+const async = require("async");
+const dashboardModuleService = require("../services/dashboardModule.service");
 
 var self = {
     postDashboard: async (req, res, next) => {
@@ -40,7 +42,7 @@ var self = {
     updateDashboard: async (req, res, next) => {
         let {body: {dashboard, modules}} = req;
         const {params: {id}} = req;
-        let dbDashboard = await models.Dashboards.findOne({where: {id: id}});
+        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
         if(!dbDashboard) {
             return res.sendStatus(404);
         }
@@ -84,16 +86,68 @@ var self = {
         }
 
         return dbDashboard.save().then(() => {
-            return models.Dashboards.findOne({where: {id: id}, include: ['modules']});
+            return models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
         }).then((dbDashboard) => {
             res.json({dashboard: dbDashboard.toJSON()});
         }).catch((err) => {
             res.sendStatus(400)
         });
     },
+    addModuleToDashboard: async (req, res, next) => {
+        let {body: {module}} = req;
+        const {params: {id}} = req;
+        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+        if(!dbDashboard) {
+            return res.sendStatus(404);
+        }
+        if (dbDashboard.ProductId) {
+            if(!UserRole.isSuperAdmin(req.user)) {
+                return res.sendStatus(403);
+            }
+        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbDashboard.SquadId, role: 'ADMIN'}}))) {
+            return res.sendStatus(403);
+        }
+        let error = [];
+        module = new models.DashboardModules(module);
+        if(module.validateProperties() !== null) {
+            return res.json({modules: module.validateProperties().error});
+        }
+        module.DashboardId = dbDashboard.id;
+        module.order = dbDashboard.modules.length;
+        module.save().then((module) => {
+            res.json({module});
+        }).catch((err) => {
+            console.log(err);
+            res.sendStatus(400);
+        });
+    },
+    removeModuleToDashboard: async (req, res, next) => {
+        const {params: {id, moduleId}} = req;
+        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        if(!dbDashboard) {
+            return res.sendStatus(404);
+        }
+        let dbModule = await models.DashboardModules.findOne({where: {DashboardId: dbDashboard.id, id: moduleId}});
+        if(!dbModule) {
+            return res.sendStatus(404);
+        }
+        if (dbDashboard.ProductId) {
+            if(!UserRole.isSuperAdmin(req.user)) {
+                return res.sendStatus(403);
+            }
+        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbDashboard.SquadId, role: 'ADMIN'}}))) {
+            return res.sendStatus(403);
+        }
+        dbModule.destroy().then(() => {
+            res.json({});
+        }).catch((err) => {
+            console.log(err);
+            res.sendStatus(400);
+        });
+    },
     deleteDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({where: {id: id}});
+        let dashboard = await models.Dashboards.findOne({where: {publicId: id}});
         if(!dashboard) {
             return res.sendStatus(404);
         }
@@ -114,7 +168,7 @@ var self = {
     },
     getDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({where: {id: id}, includes: ['modules']});
+        let dashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
         if(!dashboard) {
             return res.sendStatus(404);
         }
@@ -126,7 +180,50 @@ var self = {
             return res.sendStatus(403);
         }
 
-        return res.json({dashboard});
+        if(!dashboard.modules) {
+            dashboard.modules = [];
+        }
+        let moduleLoaders = [];
+        dashboard = dashboard.toJSON();
+        dashboard.id = dashboard.publicId;
+        let dashboardModules = [];
+        dashboard.modules.forEach((module) => {
+            moduleLoaders.push((callback) => {
+                dashboardModuleService.loadModuleStats(req.user, module).then((module) => {
+                    // console.log(module);
+                    // dashboardModules.push(module);
+                    callback();
+                })
+            })
+        });
+
+        async.parallel(moduleLoaders, () => {
+            return res.json({dashboard});
+        });
+    },
+    getMyDashboard: async (req, res, next) => {
+        const {params: {id}} = req;
+        let dashboard = await models.Dashboards.findOne({include: ['modules']});
+        if(!dashboard) {
+            return res.sendStatus(404);
+        }
+        if(!dashboard.modules) {
+            dashboard.modules = [];
+        }
+        let moduleLoaders = [];
+        dashboard = dashboard.toJSON();
+        dashboard.modules.forEach((module) => {
+            moduleLoaders.push((callback) => {
+                dashboardModuleService.loadModuleStats(req.user, module).then((module) => {
+                    callback();
+                })
+            })
+        });
+
+        async.parallel(moduleLoaders, () => {
+            console.log(dashboard.modules);
+            return res.json({dashboard});
+        });
     },
     getDashboards: (req, res, next) => {
         if(!req.squadId) {

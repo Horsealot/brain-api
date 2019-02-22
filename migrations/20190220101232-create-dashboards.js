@@ -9,6 +9,10 @@ module.exports = {
                   primaryKey: true,
                   autoIncrement: true
               },
+              publicId: {
+                  type: Sequelize.UUID,
+                  defaultValue: Sequelize.UUIDV4,
+              },
               SquadId: {
                   type: Sequelize.INTEGER,
                   references: {

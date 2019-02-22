@@ -21,6 +21,7 @@ module.exports = {
                     type: Sequelize.ENUM,
                     values: ['chart', 'goal', 'period'],
                 },
+                title: Sequelize.STRING,
                 order: Sequelize.STRING,
                 properties: Sequelize.JSON,
                 width: Sequelize.STRING,

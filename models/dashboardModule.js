@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM,
             values: ['chart', 'goal', 'period'],
         },
+        title: DataTypes.STRING,
         order: DataTypes.INTEGER,
         properties: DataTypes.JSON,
         width: DataTypes.INTEGER
@@ -27,8 +28,8 @@ module.exports = (sequelize, DataTypes) => {
         switch (this.type) {
             case 'chart':
                 const error = { error : {} };
-                if(!properties.period) {
-                    error.period = 'Mandatory value';
+                if(!properties.title) {
+                    error.title = 'Mandatory value';
                 }
                 if(!properties.kpi) {
                     error.kpi = 'Mandatory value';

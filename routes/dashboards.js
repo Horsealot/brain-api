@@ -19,6 +19,20 @@ module.exports = (router) => {
     });
 
     /**
+     * Update a dashboard
+     */
+    router.post('/dashboards/:id/module', auth.required, auth.loadUser, (req, res, next) => {
+        dashboardcontroller.addModuleToDashboard(req, res, next);
+    });
+
+    /**
+     * Update a dashboard
+     */
+    router.delete('/dashboards/:id/module/:moduleId', auth.required, auth.loadUser, (req, res, next) => {
+        dashboardcontroller.removeModuleToDashboard(req, res, next);
+    });
+
+    /**
      * Delete a dashboard
      */
     router.delete('/dashboards/:id', auth.required, auth.loadUser, (req, res, next) => {
@@ -51,6 +65,13 @@ module.exports = (router) => {
      */
     router.delete('/dashboards/kpis/:id', auth.required, auth.loadUser, auth.loadSquadId, (req, res, next) => {
         dashboardcontroller.deleteKpis(req, res, next);
+    });
+
+    /**
+     * Get active dashboard
+     */
+    router.get('/dashboards/my', auth.required, auth.loadUser, auth.loadSquadId, (req, res, next) => {
+        dashboardcontroller.getMyDashboard(req, res, next);
     });
 
     /**
