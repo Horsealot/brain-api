@@ -240,6 +240,27 @@ components:
         productId:
           description: Dashboard's product
           type: string
+    Module:
+      type: object
+      properties:
+        id:
+          description: Module's id
+          type: string
+        title:
+          description: Module's title
+          type: string
+        type:
+          description: Module's type
+          type: string
+        order:
+          description: Module's order
+          type: number
+        width:
+          description: Module's width (1,2,3,4)
+          type: number
+        properties:
+          description: Module's properties
+          type: string
     Dashboard:
       type: object
       properties:
@@ -1008,8 +1029,8 @@ paths:
               schema:
                 type: object
                 properties:
-                  user:
-                    $ref: '#/components/schemas/AdminUser'
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -1018,6 +1039,58 @@ paths:
           description: 'Unknown tool'
         '422':
           $ref: '#/components/responses/MissingParam'
+  /dashboards/my:
+    get:
+      summary: Get my active dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /dashboards/kpis:
+    get:
+      summary: Get available kpis.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the availables kpis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
   /dashboards/:id:
     get:
       summary: Get a dashboard.
@@ -1040,8 +1113,8 @@ paths:
               schema:
                 type: object
                 properties:
-                  user:
-                    $ref: '#/components/schemas/AdminUser'
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
     post:
@@ -1116,7 +1189,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - Tools
+      - Dashboard
       parameters:
       - in: path
         name: toolId
@@ -1132,4 +1205,154 @@ paths:
         '403':
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
-          description: 'Unknown tdashboardool'
+          description: 'Unknown dashboard'
+  /dashboards/:id/module:
+    post:
+      summary: Add a new module to a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: object
+                  properties:
+                    title:
+                      description: Module's title
+                      type: number
+                    type:
+                      description: Module's type
+                      type: string
+                    order:
+                      description: Module's order
+                      type: number
+                    width:
+                      description: Module's width (1,2,3,4)
+                      type: number
+                    properties:
+                      description: Module's properties
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new module
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /dashboards/:id/module/:moduleId:
+    post:
+      summary: Update a single module from a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: object
+                  properties:
+                    title:
+                      description: Module's title
+                      type: number
+                    type:
+                      description: Module's type
+                      type: string
+                    order:
+                      description: Module's order
+                      type: number
+                    width:
+                      description: Module's width (1,2,3,4)
+                      type: number
+                    properties:
+                      description: Module's properties
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated module
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard or module'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Remove a module from a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
+      responses:
+        '200':    # status code
+          description: Module deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard or module'
+        '422':
+          $ref: '#/components/responses/MissingParam'

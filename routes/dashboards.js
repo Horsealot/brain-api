@@ -12,21 +12,21 @@ module.exports = (router) => {
     });
 
     /**
-     * Update a dashboard
+     * Get all available dashboards
      */
-    router.post('/dashboards/:id', auth.required, auth.loadUser, (req, res, next) => {
-        dashboardcontroller.updateDashboard(req, res, next);
+    router.get('/dashboards', auth.required, auth.loadUser, auth.loadSquadId, (req, res, next) => {
+        dashboardcontroller.getDashboards(req, res, next);
     });
 
     /**
-     * Update a dashboard
+     * Add a module to a dashboard
      */
     router.post('/dashboards/:id/module', auth.required, auth.loadUser, (req, res, next) => {
         dashboardcontroller.addModuleToDashboard(req, res, next);
     });
 
     /**
-     * Update a dashboard
+     * Remove a module from a dashboard
      */
     router.delete('/dashboards/:id/module/:moduleId', auth.required, auth.loadUser, (req, res, next) => {
         dashboardcontroller.removeModuleToDashboard(req, res, next);
@@ -82,10 +82,9 @@ module.exports = (router) => {
     });
 
     /**
-     * Get all available dashboards
+     * Update a dashboard
      */
-    router.get('/dashboards', auth.required, auth.loadUser, auth.loadSquadId, (req, res, next) => {
-        dashboardcontroller.getDashboards(req, res, next);
+    router.post('/dashboards/:id', auth.required, auth.loadUser, (req, res, next) => {
+        dashboardcontroller.updateDashboard(req, res, next);
     });
-
 };
