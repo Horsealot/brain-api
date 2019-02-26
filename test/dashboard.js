@@ -16,7 +16,9 @@ chai.use(chaiHttp);
 //Our parent block
 describe('Dashboards', () => {
     beforeEach((done) => { //Before each test we empty the database
-        preTest.cleanDB(done);
+        preTest.cleanDB().then(() => {
+            done();
+        });
     });
 
     /*
@@ -224,7 +226,7 @@ describe('Dashboards', () => {
     */
     describe('/POST dashboards/:id', () => {
 
-        it('should return 404 for an unknown dashboard', (done) => {
+        it('should return 400 for an invalid id', (done) => {
             let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
             let squad1 = new models.Squads({
                 name: 'squad1',
@@ -235,6 +237,26 @@ describe('Dashboards', () => {
             }).then((squad1) => {
                 chai.request(server)
                     .post('/api/dashboards/1')
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send({dashboard: {name: 'New dashboard', squadId: squad1.id}})
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        done();
+                    });
+            });
+        });
+
+        it('should return 404 for an unknown dashboard', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
+            let squad1 = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            user1.save().then((user1) => {
+                return squad1.save();
+            }).then((squad1) => {
+                chai.request(server)
+                    .post('/api/dashboards/47b454e9-f0e4-4c0f-9ef1-72ca01600816')
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send({dashboard: {name: 'New dashboard', squadId: squad1.id}})
                     .end((err, res) => {
@@ -259,9 +281,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(403);
                         done();
@@ -287,9 +309,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(403);
                         done();
@@ -309,9 +331,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(403);
                         done();
@@ -338,9 +360,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(403);
                         done();
@@ -366,9 +388,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.should.be.json;
@@ -404,9 +426,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.should.be.json;
@@ -442,9 +464,9 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .post('/api/dashboards/' + dashboard.id)
+                    .post('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
-                    .send({dashboard: {name: 'New dashboard name'}})
+                    .send({dashboard: {name: 'New dashboard name'}, modules: []})
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.should.be.json;
@@ -619,11 +641,24 @@ describe('Dashboards', () => {
     */
     describe('/DELETE dashboards/:id', () => {
 
-        it('should return 404 for an unknown dashboard', (done) => {
+        it('should return 400 for an invalid id', (done) => {
             let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
             user1.save().then((user1) => {
                 chai.request(server)
                     .delete('/api/dashboards/1')
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        done();
+                    });
+            });
+        });
+        it('should return 404 for an unknown dashboard', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
+            user1.save().then((user1) => {
+                chai.request(server)
+                    .delete('/api/dashboards/47b454e9-f0e4-4c0f-9ef1-72ca01600816')
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -648,7 +683,7 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .delete('/api/dashboards/' + dashboard.id)
+                    .delete('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -679,7 +714,7 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .delete('/api/dashboards/' + dashboard.id)
+                    .delete('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -710,7 +745,7 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .delete('/api/dashboards/' + dashboard.id)
+                    .delete('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send()
                     .end((err, res) => {
@@ -738,7 +773,7 @@ describe('Dashboards', () => {
                 return dashboard.save();
             }).then((dashboard) => {
                 chai.request(server)
-                    .delete('/api/dashboards/' + dashboard.id)
+                    .delete('/api/dashboards/' + dashboard.publicId)
                     .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
                     .send()
                     .end((err, res) => {

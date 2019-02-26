@@ -328,6 +328,40 @@ components:
               data:
                 description: Module's data
                 type: string
+    Period:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Period's ID.
+        name:
+          description: Period's name
+          type: string
+        startDate:
+          description: Period's start date
+          type: string
+          format: date
+        endDate:
+          description: Period's end date
+          type: string
+          format: date
+    OKR:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: OKR's ID.
+        picture:
+          description: OKR's picture link
+          type: string
+        link:
+          description: OKR's link
+          type: string
+        isSquad:
+          description: Is a squad OKR
+          type: boolean
+        period:
+          $ref: '#/components/schemas/Period'
 paths:
   /invite:
     post:
@@ -1354,5 +1388,156 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
           description: 'Unknown dashboard or module'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /okrs:
+    get:
+      summary: Get an OKR.
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  okr:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create an okr
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context (if kpi is for a squad)
+        schema:
+          type: integer
+        required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                okr:
+                  type: object
+                  properties:
+                    link:
+                      description: OKR's link
+                      type: string
+                    picture:
+                      description: OKR's picture link
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the created OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /okrs/:id:
+    post:
+      summary: Update an okr
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                okr:
+                  type: object
+                  properties:
+                    link:
+                      description: OKR's link
+                      type: string
+                    picture:
+                      description: OKR's picture link
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated okr
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  okr:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete an OKR
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      responses:
+        '200':    # status code
+          description: OKR deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
         '422':
           $ref: '#/components/responses/MissingParam'

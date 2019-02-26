@@ -42,7 +42,7 @@ const auth = {
             }
             req.user = user;
             next();
-        }).catch(() => {
+        }).catch((err) => {
             return res.sendStatus(400);
         });
     },
@@ -98,11 +98,27 @@ const auth = {
         }
         const squadId = getSquadFromHeaders(req);
         req.squadId = squadId;
-        if (!UserRole.isSuperAdmin(req.user)) {
-            const userRoleInSquad = await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: squadId}});
-            if(!userRoleInSquad || userRoleInSquad.role !== 'ADMIN') {
-                return res.sendStatus(403);
+        if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: squadId, role: 'ADMIN'}}))) {
+            return res.sendStatus(403);
+        }
+        next();
+    },
+    squadMemberOrSuperAdmin: async (req, res, next) => {
+        if (!req.user) {
+            const { payload: { id } } = req;
+            try {
+                req.user = await models.Users.findOne({where: {publicId: id}, include: ['squads']});
+            } catch (e) {
+                return res.sendStatus(400);
             }
+        }
+        if (!req.user) {
+            return res.sendStatus(400);
+        }
+        const squadId = getSquadFromHeaders(req);
+        req.squadId = squadId;
+        if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: squadId}}))) {
+            return res.sendStatus(403);
         }
         next();
     },

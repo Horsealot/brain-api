@@ -16,7 +16,9 @@ chai.use(chaiHttp);
 //Our parent block
 describe('Squad', () => {
     beforeEach((done) => { //Before each test we empty the database
-        preTest.cleanDB(done);
+        preTest.cleanDB().then(() => {
+            done();
+        });
     });
 
     /*

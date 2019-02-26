@@ -87,42 +87,6 @@ var self = {
         }
 
         updateStatus = {...updateStatus, ...req.targetUser.updateFromEntity(user, req.userRights)};
-        // if (req.userRights.indexOf(userRightsNomenclature.SUPER_ADMIN) >= 0 && user.squads) {
-        //     req.targetUser.squads.forEach((actualUserSquad) => {
-        //         let indexOfExisitingSquad = -1;
-        //         user.squads.forEach(async (squad, index) => {
-        //             if (squad.name === actualUserSquad.slug) {
-        //                 actualUserSquad.UserSquads.role = squad.role;
-        //                 await actualUserSquad.UserSquads.save();
-        //                 indexOfExisitingSquad = index;
-        //             }
-        //         });
-        //         if (indexOfExisitingSquad >= 0) {
-        //             user.squads.splice(indexOfExisitingSquad, 1);
-        //         } else {
-        //             req.targetUser.removeSquad(actualUserSquad);
-        //         }
-        //     });
-        //     const newSquads = await models.Squads.findAll({where: {slug: {in: user.squads.map((squad) => squad.name)}}});
-        //     newSquads.forEach((squad) => {
-        //         user.squads.forEach((userSquad) => {
-        //             if (squad.slug === userSquad.name) {
-        //                 req.targetUser.addSquad(squad, {through: {role: userSquad.role}});
-        //             }
-        //         })
-        //     });
-        //     updateStatus.squads = 'updated';
-        // }
-        // if ((req.userRights.indexOf(userRightsNomenclature.SQUAD_ADMIN) >= 0 || req.userRights.indexOf(userRightsNomenclature.SUPER_ADMIN) >= 0) && user.role) {
-        //     let userSquad = await models.UserSquads.findOne({where: {UserId: req.targetUser.id, SquadId: req.squadId}});
-        //     if (userSquad) {
-        //         userSquad.role = user.role;
-        //         await userSquad.save();
-        //         updateStatus.role = 'updated';
-        //     } else {
-        //         updateStatus.role = 'not allowed';
-        //     }
-        // }
         req.targetUser.save().then(() => {
             return res.send({user: updateStatus});
         }).catch(() => res.sendStatus(400));
@@ -146,6 +110,7 @@ var self = {
         if(!req.body.squad || !req.body.squad.role) {
             return res.status(422).json({
                 errors: {
+                    squad: 'is required',
                     role: 'is required'
                 }
             });

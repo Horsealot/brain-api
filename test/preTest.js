@@ -2,10 +2,12 @@ const models = require('./../models');
 
 module.exports = {
     cleanDB: (done) => {
-        models.PasswordRequests.destroy({where: {}}).then(() => {
+        return models.PasswordRequests.destroy({where: {}}).then(() => {
             return models.Tools.destroy({where: {}});
         }).then(() => {
             return models.ToolCategories.destroy({where: {}});
+        }).then(() => {
+            return models.Okrs.destroy({where: {}});
         }).then(() => {
             return models.DashboardModules.destroy({where: {}});
         }).then(() => {
@@ -21,7 +23,7 @@ module.exports = {
         }).then(() => {
             return models.Squads.destroy({where: {}});
         }).then(() => {
-            done();
-        })
+            return models.Periods.destroy({where: {}});
+        });
     }
 }

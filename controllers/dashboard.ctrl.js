@@ -42,7 +42,12 @@ var self = {
     updateDashboard: async (req, res, next) => {
         let {body: {dashboard, modules}} = req;
         const {params: {id}} = req;
-        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        let dbDashboard;
+        try {
+            dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        } catch(err) {
+            return res.sendStatus(400);
+        }
         if(!dbDashboard) {
             return res.sendStatus(404);
         }
@@ -96,7 +101,12 @@ var self = {
     addModuleToDashboard: async (req, res, next) => {
         let {body: {module}} = req;
         const {params: {id}} = req;
-        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+        let dbDashboard;
+        try {
+            dbDashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+        } catch(err) {
+            return res.sendStatus(400);
+        }
         if(!dbDashboard) {
             return res.sendStatus(404);
         }
@@ -123,7 +133,12 @@ var self = {
     },
     removeModuleToDashboard: async (req, res, next) => {
         const {params: {id, moduleId}} = req;
-        let dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        let dbDashboard;
+        try {
+            dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        } catch(err) {
+            return res.sendStatus(400);
+        }
         if(!dbDashboard) {
             return res.sendStatus(404);
         }
@@ -147,7 +162,12 @@ var self = {
     },
     deleteDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        let dashboard;
+        try {
+            dashboard = await models.Dashboards.findOne({where: {publicId: id}});
+        } catch(err) {
+            return res.sendStatus(400);
+        }
         if(!dashboard) {
             return res.sendStatus(404);
         }
@@ -168,7 +188,12 @@ var self = {
     },
     getDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+        let dashboard;
+        try {
+            dashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+        } catch(err) {
+            return res.sendStatus(400);
+        }
         if(!dashboard) {
             return res.sendStatus(404);
         }

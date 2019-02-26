@@ -127,4 +127,30 @@ db.DashboardModules.belongsTo(db.Dashboards, {
     as: 'dashboard',
 });
 
+db.Periods.hasMany(db.Okrs, {
+    foreignKey: 'PeriodId',
+    sourceKey: 'id',
+    as: 'okrs',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.Okrs.belongsTo(db.Periods, {
+    foreignKey: 'PeriodId',
+    sourceKey: 'id',
+    as: 'period',
+});
+
+db.Squads.hasMany(db.Okrs, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'okrs',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.Okrs.belongsTo(db.Squads, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'squad',
+});
+
 module.exports = db;
