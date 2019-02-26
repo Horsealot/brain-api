@@ -13,6 +13,11 @@ const availableCommands = [
         file: 'create.squad',
         cmd: 'create-squad',
         description: 'Create an empty squad ${SQUAD_NAME}'
+    },
+    {
+        file: 'create.period',
+        cmd: 'create-period',
+        description: 'Create current period if not existing'
     }
 ];
 
