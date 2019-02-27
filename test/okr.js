@@ -898,7 +898,7 @@ describe('Okrs', () => {
             let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
             let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
             let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
-            user1.save(() => {
+            user1.save().then((user1) => {
                 return expiredPeriod.save();
             }).then((expiredPeriod) => {
                 return squad.save();
@@ -961,7 +961,7 @@ describe('Okrs', () => {
             let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
             let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
             let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
-            user1.save(() => {
+            user1.save().then((user1) => {
                 return expiredPeriod.save();
             }).then((expiredPeriod) => {
                 return squad.save();
@@ -1008,7 +1008,7 @@ describe('Okrs', () => {
             let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
             let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
             let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
-            user1.save(() => {
+            user1.save().then((user1) => {
                 return expiredPeriod.save();
             }).then((expiredPeriod) => {
                 return squad.save();
@@ -1041,6 +1041,7 @@ describe('Okrs', () => {
                         res.body.should.be.a('object');
                         res.body.should.have.property('okr');
                         res.body.should.have.property('squadOkr');
+                        res.body.should.have.property('period');
                         res.body.okr.should.be.a('object');
                         res.body.okr.should.have.property('id').eql(currentBrainOkr.id);
                         res.body.okr.should.have.property('link').eql(currentBrainOkr.link);
@@ -1074,7 +1075,7 @@ describe('Okrs', () => {
             let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
             let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
             let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
-            user1.save(() => {
+            user1.save().then((user1) => {
                 return expiredPeriod.save();
             }).then((expiredPeriod) => {
                 return squad.save();
@@ -1107,6 +1108,7 @@ describe('Okrs', () => {
                         res.body.should.be.a('object');
                         res.body.should.have.property('okr');
                         res.body.should.have.property('squadOkr');
+                        res.body.should.have.property('period');
                         res.body.okr.should.be.a('object');
                         res.body.okr.should.have.property('id').eql(currentBrainOkr.id);
                         res.body.okr.should.have.property('link').eql(currentBrainOkr.link);
@@ -1119,6 +1121,327 @@ describe('Okrs', () => {
                         res.body.squadOkr.should.have.property('picture').eql(currentSquadOkr.picture);
                         res.body.squadOkr.should.have.property('isSquad').eql(true);
                         res.body.squadOkr.should.have.property('period');
+                        done();
+                    });
+            });
+        });
+    });
+
+    /*
+    * Test the /GET Okrs/past route
+    */
+    describe('/GET Okrs/past', () => {
+
+        it('should return 401 for unauthentified', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
+            user1.save().then((user1) => {
+                chai.request(server)
+                    .get('/api/okrs/past')
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(401);
+                        done();
+                    });
+            });
+        });
+
+        it('should return both squad and brain current okr', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1', roles: ['ADMIN']});
+            let startDate = new Date();
+            let endDate = new Date();
+            startDate.setDate(startDate.getDate() - 120);
+            endDate.setDate(endDate.getDate() - 60);
+            let expiredPeriod = new models.Periods({name: 'Jan - Mars 2019', startDate: startDate, endDate: endDate});
+
+            let squad = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            let expiredBrainOkr = new models.Okrs({link: 'link1', picture: 'picture1'});
+            let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
+            let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
+            let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
+            user1.save().then((user1) => {
+                return expiredPeriod.save();
+            }).then((expiredPeriod) => {
+                return squad.save();
+            }).then((squad) => {
+                currentSquadOkr.SquadId = squad.id;
+                currentSquadOkr.PeriodId = period.id;
+                return currentSquadOkr.save();
+            }).then((currentSquadOkr) => {
+                expiredSquadOkr.SquadId = squad.id;
+                expiredSquadOkr.PeriodId = expiredPeriod.id;
+                return expiredSquadOkr.save();
+            }).then((expiredSquadOkr) => {
+                expiredBrainOkr.PeriodId = expiredPeriod.id;
+                return expiredBrainOkr.save();
+            }).then((expiredBrainOkr) => {
+                currentBrainOkr.PeriodId = period.id;
+                return currentBrainOkr.save();
+            }).then((currentBrainOkr) => {
+                chai.request(server)
+                    .get('/api/okrs/past')
+                    .set('Brain-squad', squad.id)
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('okrs');
+                        res.body.okrs.should.be.a('array');
+                        res.body.okrs[0].should.be.a('object');
+                        res.body.okrs[0].should.have.property('okr');
+                        res.body.okrs[0].should.have.property('squadOkr');
+                        res.body.okrs[0].should.have.property('period');
+                        res.body.okrs[0].okr.should.be.a('object');
+                        res.body.okrs[0].okr.should.have.property('id').eql(currentBrainOkr.id);
+                        res.body.okrs[0].okr.should.have.property('link').eql(currentBrainOkr.link);
+                        res.body.okrs[0].okr.should.have.property('picture').eql(currentBrainOkr.picture);
+                        res.body.okrs[0].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[0].okr.should.have.property('period');
+                        res.body.okrs[0].squadOkr.should.be.a('object');
+                        res.body.okrs[0].squadOkr.should.have.property('id').eql(currentSquadOkr.id);
+                        res.body.okrs[0].squadOkr.should.have.property('link').eql(currentSquadOkr.link);
+                        res.body.okrs[0].squadOkr.should.have.property('picture').eql(currentSquadOkr.picture);
+                        res.body.okrs[0].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[0].squadOkr.should.have.property('period');
+                        res.body.okrs[1].should.be.a('object');
+                        res.body.okrs[1].should.have.property('okr');
+                        res.body.okrs[1].should.have.property('squadOkr');
+                        res.body.okrs[1].should.have.property('period');
+                        res.body.okrs[1].okr.should.be.a('object');
+                        res.body.okrs[1].okr.should.have.property('id').eql(expiredBrainOkr.id);
+                        res.body.okrs[1].okr.should.have.property('link').eql(expiredBrainOkr.link);
+                        res.body.okrs[1].okr.should.have.property('picture').eql(expiredBrainOkr.picture);
+                        res.body.okrs[1].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[1].okr.should.have.property('period');
+                        res.body.okrs[1].squadOkr.should.be.a('object');
+                        res.body.okrs[1].squadOkr.should.have.property('id').eql(expiredSquadOkr.id);
+                        res.body.okrs[1].squadOkr.should.have.property('link').eql(expiredSquadOkr.link);
+                        res.body.okrs[1].squadOkr.should.have.property('picture').eql(expiredSquadOkr.picture);
+                        res.body.okrs[1].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[1].squadOkr.should.have.property('period');
+                        done();
+                    });
+            });
+        });
+
+        it('should 403 for a non member of the squad nor non superadmin', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1'});
+            let startDate = new Date();
+            let endDate = new Date();
+            startDate.setDate(startDate.getDate() - 120);
+            endDate.setDate(endDate.getDate() - 60);
+            let expiredPeriod = new models.Periods({name: 'Jan - Mars 2019', startDate: startDate, endDate: endDate});
+
+            let squad = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            let expiredBrainOkr = new models.Okrs({link: 'link1', picture: 'picture1'});
+            let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
+            let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
+            let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
+            user1.save().then((user1) => {
+                return expiredPeriod.save();
+            }).then((expiredPeriod) => {
+                return squad.save();
+            }).then((squad) => {
+                currentSquadOkr.SquadId = squad.id;
+                currentSquadOkr.PeriodId = period.id;
+                return currentSquadOkr.save();
+            }).then((currentSquadOkr) => {
+                expiredSquadOkr.SquadId = squad.id;
+                expiredSquadOkr.PeriodId = expiredPeriod.id;
+                return expiredSquadOkr.save();
+            }).then((expiredSquadOkr) => {
+                expiredBrainOkr.PeriodId = expiredPeriod.id;
+                return expiredBrainOkr.save();
+            }).then((expiredBrainOkr) => {
+                currentBrainOkr.PeriodId = period.id;
+                return currentBrainOkr.save();
+            }).then((currentBrainOkr) => {
+                chai.request(server)
+                    .get('/api/okrs/past')
+                    .set('Brain-squad', squad.id)
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        done();
+                    });
+            });
+        });
+
+        it('should return both squad and brain current okr for a squad admin', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1'});
+            let startDate = new Date();
+            let endDate = new Date();
+            startDate.setDate(startDate.getDate() - 120);
+            endDate.setDate(endDate.getDate() - 60);
+            let expiredPeriod = new models.Periods({name: 'Jan - Mars 2019', startDate: startDate, endDate: endDate});
+
+            let squad = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            let expiredBrainOkr = new models.Okrs({link: 'link1', picture: 'picture1'});
+            let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
+            let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
+            let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
+            user1.save().then((user1) => {
+                return expiredPeriod.save();
+            }).then((expiredPeriod) => {
+                return squad.save();
+            }).then((squad) => {
+                user1.addSquad(squad, {through: {role: 'ADMIN'}});
+                return user1.save();
+            }).then((user1) => {
+                currentSquadOkr.SquadId = squad.id;
+                currentSquadOkr.PeriodId = period.id;
+                return currentSquadOkr.save();
+            }).then((currentSquadOkr) => {
+                expiredSquadOkr.SquadId = squad.id;
+                expiredSquadOkr.PeriodId = expiredPeriod.id;
+                return expiredSquadOkr.save();
+            }).then((expiredSquadOkr) => {
+                expiredBrainOkr.PeriodId = expiredPeriod.id;
+                return expiredBrainOkr.save();
+            }).then((expiredBrainOkr) => {
+                currentBrainOkr.PeriodId = period.id;
+                return currentBrainOkr.save();
+            }).then((currentBrainOkr) => {
+                chai.request(server)
+                    .get('/api/okrs/past')
+                    .set('Brain-squad', squad.id)
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('okrs');
+                        res.body.okrs.should.be.a('array');
+                        res.body.okrs[0].should.be.a('object');
+                        res.body.okrs[0].should.have.property('okr');
+                        res.body.okrs[0].should.have.property('squadOkr');
+                        res.body.okrs[0].should.have.property('period');
+                        res.body.okrs[0].okr.should.be.a('object');
+                        res.body.okrs[0].okr.should.have.property('id').eql(currentBrainOkr.id);
+                        res.body.okrs[0].okr.should.have.property('link').eql(currentBrainOkr.link);
+                        res.body.okrs[0].okr.should.have.property('picture').eql(currentBrainOkr.picture);
+                        res.body.okrs[0].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[0].okr.should.have.property('period');
+                        res.body.okrs[0].squadOkr.should.be.a('object');
+                        res.body.okrs[0].squadOkr.should.have.property('id').eql(currentSquadOkr.id);
+                        res.body.okrs[0].squadOkr.should.have.property('link').eql(currentSquadOkr.link);
+                        res.body.okrs[0].squadOkr.should.have.property('picture').eql(currentSquadOkr.picture);
+                        res.body.okrs[0].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[0].squadOkr.should.have.property('period');
+                        res.body.okrs[1].should.be.a('object');
+                        res.body.okrs[1].should.have.property('okr');
+                        res.body.okrs[1].should.have.property('squadOkr');
+                        res.body.okrs[1].should.have.property('period');
+                        res.body.okrs[1].okr.should.be.a('object');
+                        res.body.okrs[1].okr.should.have.property('id').eql(expiredBrainOkr.id);
+                        res.body.okrs[1].okr.should.have.property('link').eql(expiredBrainOkr.link);
+                        res.body.okrs[1].okr.should.have.property('picture').eql(expiredBrainOkr.picture);
+                        res.body.okrs[1].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[1].okr.should.have.property('period');
+                        res.body.okrs[1].squadOkr.should.be.a('object');
+                        res.body.okrs[1].squadOkr.should.have.property('id').eql(expiredSquadOkr.id);
+                        res.body.okrs[1].squadOkr.should.have.property('link').eql(expiredSquadOkr.link);
+                        res.body.okrs[1].squadOkr.should.have.property('picture').eql(expiredSquadOkr.picture);
+                        res.body.okrs[1].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[1].squadOkr.should.have.property('period');
+                        done();
+                    });
+            });
+        });
+
+        it('should return both squad and brain current okr for a squad member', (done) => {
+            let user1 = new models.Users({ email: "test@testuser.com", password: "testpassword", firstname: 'Test1', lastname: 'User1'});
+            let startDate = new Date();
+            let endDate = new Date();
+            startDate.setDate(startDate.getDate() - 120);
+            endDate.setDate(endDate.getDate() - 60);
+            let expiredPeriod = new models.Periods({name: 'Jan - Mars 2019', startDate: startDate, endDate: endDate});
+
+            let squad = new models.Squads({
+                name: 'squad1',
+                slug: 'squad1'
+            });
+            let expiredBrainOkr = new models.Okrs({link: 'link1', picture: 'picture1'});
+            let expiredSquadOkr = new models.Okrs({link: 'link2', picture: 'picture2'});
+            let currentBrainOkr = new models.Okrs({link: 'link3', picture: 'picture3'});
+            let currentSquadOkr = new models.Okrs({link: 'link4', picture: 'picture4'});
+            user1.save().then((user1) => {
+                return expiredPeriod.save();
+            }).then((expiredPeriod) => {
+                return squad.save();
+            }).then((squad) => {
+                user1.addSquad(squad, {through: {role: 'USER'}});
+                return user1.save();
+            }).then((user1) => {
+                currentSquadOkr.SquadId = squad.id;
+                currentSquadOkr.PeriodId = period.id;
+                return currentSquadOkr.save();
+            }).then((currentSquadOkr) => {
+                expiredSquadOkr.SquadId = squad.id;
+                expiredSquadOkr.PeriodId = expiredPeriod.id;
+                return expiredSquadOkr.save();
+            }).then((expiredSquadOkr) => {
+                expiredBrainOkr.PeriodId = expiredPeriod.id;
+                return expiredBrainOkr.save();
+            }).then((expiredBrainOkr) => {
+                currentBrainOkr.PeriodId = period.id;
+                return currentBrainOkr.save();
+            }).then((currentBrainOkr) => {
+                chai.request(server)
+                    .get('/api/okrs/past')
+                    .set('Brain-squad', squad.id)
+                    .set('Authorization', 'Bearer ' + user1.toAuthJSON().token)
+                    .send()
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('okrs');
+                        res.body.okrs.should.be.a('array');
+                        res.body.okrs[0].should.be.a('object');
+                        res.body.okrs[0].should.have.property('okr');
+                        res.body.okrs[0].should.have.property('squadOkr');
+                        res.body.okrs[0].should.have.property('period');
+                        res.body.okrs[0].okr.should.be.a('object');
+                        res.body.okrs[0].okr.should.have.property('id').eql(currentBrainOkr.id);
+                        res.body.okrs[0].okr.should.have.property('link').eql(currentBrainOkr.link);
+                        res.body.okrs[0].okr.should.have.property('picture').eql(currentBrainOkr.picture);
+                        res.body.okrs[0].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[0].okr.should.have.property('period');
+                        res.body.okrs[0].squadOkr.should.be.a('object');
+                        res.body.okrs[0].squadOkr.should.have.property('id').eql(currentSquadOkr.id);
+                        res.body.okrs[0].squadOkr.should.have.property('link').eql(currentSquadOkr.link);
+                        res.body.okrs[0].squadOkr.should.have.property('picture').eql(currentSquadOkr.picture);
+                        res.body.okrs[0].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[0].squadOkr.should.have.property('period');
+                        res.body.okrs[1].should.be.a('object');
+                        res.body.okrs[1].should.have.property('okr');
+                        res.body.okrs[1].should.have.property('squadOkr');
+                        res.body.okrs[1].should.have.property('period');
+                        res.body.okrs[1].okr.should.be.a('object');
+                        res.body.okrs[1].okr.should.have.property('id').eql(expiredBrainOkr.id);
+                        res.body.okrs[1].okr.should.have.property('link').eql(expiredBrainOkr.link);
+                        res.body.okrs[1].okr.should.have.property('picture').eql(expiredBrainOkr.picture);
+                        res.body.okrs[1].okr.should.have.property('isSquad').eql(false);
+                        res.body.okrs[1].okr.should.have.property('period');
+                        res.body.okrs[1].squadOkr.should.be.a('object');
+                        res.body.okrs[1].squadOkr.should.have.property('id').eql(expiredSquadOkr.id);
+                        res.body.okrs[1].squadOkr.should.have.property('link').eql(expiredSquadOkr.link);
+                        res.body.okrs[1].squadOkr.should.have.property('picture').eql(expiredSquadOkr.picture);
+                        res.body.okrs[1].squadOkr.should.have.property('isSquad').eql(true);
+                        res.body.okrs[1].squadOkr.should.have.property('period');
                         done();
                     });
             });

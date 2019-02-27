@@ -118,6 +118,7 @@ var self = {
         let okrs = await models.Okrs.findAll({where: {$or: [{SquadId: null}, {SquadId: req.squadId}]}, order: [['SquadId', 'DESC']], include: ['period']});
         let response = {};
         okrs.forEach((okr) => {
+            // console.log(okr);
             if(!response[okr.period.id]) {
                 response[okr.period.id] = {
                     period: okr.period
