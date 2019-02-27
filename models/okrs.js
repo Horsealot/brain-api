@@ -2,6 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
     const Okrs = sequelize.define('Okrs', {
+        goal: DataTypes.STRING,
         link: DataTypes.STRING,
         picture: DataTypes.STRING
     }, {
@@ -19,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     Okrs.prototype.toJSON = function() {
         let jsonOKR = {
             id: this.id,
+            goal: this.goal,
             link: this.link,
             picture: this.picture,
             isSquad: (this.SquadId !== null)

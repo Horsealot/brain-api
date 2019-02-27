@@ -19,6 +19,13 @@ module.exports = (router) => {
     });
 
     /**
+     * Get past OKR
+     */
+    router.get('/okrs/past', auth.required, auth.loadUser, auth.squadMemberOrSuperAdmin, auth.loadSquadId, (req, res, next) => {
+        okrcontroller.getPastOkr(req, res, next);
+    });
+
+    /**
      * Update an okr
      */
     router.post('/okrs/:id', auth.required, auth.loadUser, (req, res, next) => {

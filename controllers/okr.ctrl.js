@@ -61,6 +61,7 @@ var self = {
         }
         if(okr.link) dbOkr.link = okr.link;
         if(okr.picture) dbOkr.picture = okr.picture;
+        if(okr.goal) dbOkr.goal = okr.goal;
 
         return dbOkr.save().then((dbOkr) => {
             res.json({okr: dbOkr.toJSON()});
@@ -102,10 +103,33 @@ var self = {
             return res.sendStatus(400);
         }
         let okrs = await models.Okrs.findAll({where: {PeriodId: currentPeriod.id, $or: [{SquadId: null}, {SquadId: req.squadId}]}, order: [['SquadId', 'DESC']]});
-        okrs = okrs.map((okr) => {
-            return {...okr.toJSON(), period: currentPeriod.toJSON()}
+        let response = {okr: null, squadOkr: null, period: currentPeriod};
+        okrs.forEach((okr) => {
+            const jsonOkr = {...okr.toJSON(), period: currentPeriod.toJSON()};
+            if(jsonOkr.isSquad) {
+                response.squadOkr = jsonOkr;
+            } else {
+                response.okr = jsonOkr;
+            }
         });
-        return res.json({okrs});
+        return res.json(response);
+    },
+    getPastOkr: async (req, res, next) => {
+        let okrs = await models.Okrs.findAll({where: {$or: [{SquadId: null}, {SquadId: req.squadId}]}, order: [['SquadId', 'DESC']], include: ['period']});
+        let response = {};
+        okrs.forEach((okr) => {
+            if(!response[okr.period.id]) {
+                response[okr.period.id] = {
+                    period: okr.period
+                };
+            }
+            if(okr.SquadId) {
+                response[okr.period.id].squadOkr = okr.toJSON();
+            } else {
+                response[okr.period.id].okr = okr.toJSON();
+            }
+        });
+        return res.json({okrs: Object.values(response)});
     },
 };
 
