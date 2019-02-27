@@ -1412,7 +1412,11 @@ paths:
               schema:
                 type: object
                 properties:
+                  period:
+                    $ref: '#/components/schemas/Period'
                   okr:
+                    $ref: '#/components/schemas/OKR'
+                  squadOkr:
                     $ref: '#/components/schemas/OKR'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -1469,6 +1473,41 @@ paths:
           description: 'Unknown OKR'
         '422':
           $ref: '#/components/responses/MissingParam'
+  /okrs/past:
+    get:
+      summary: Get past OKRS.
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  okrs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        period:
+                          $ref: '#/components/schemas/Period'
+                        okr:
+                          $ref: '#/components/schemas/OKR'
+                        squadOkr:
+                          $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
   /okrs/:id:
     post:
       summary: Update an okr
