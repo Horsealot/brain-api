@@ -71,7 +71,7 @@ var self = {
         }
 
         return goal.destroy().then(() => {
-            res.sendStatus(200);
+            res.json({});
         }).catch((err) => {
             console.log(err);
             res.sendStatus(400);
