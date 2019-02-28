@@ -12,6 +12,7 @@
   "author": "Thomas Desgrippes",
   "license": "ISC",
   "dependencies": {
+    "@slack/events-api": "^2.2.0",
     "amqplib": "^0.5.3",
     "async": "latest",
     "axios": "^0.18.0",

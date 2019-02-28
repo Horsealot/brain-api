@@ -7,6 +7,7 @@ const cors = require('cors');
 const errorHandler = require('errorhandler');
 const routes = require('./routes/');
 const helmet = require('helmet');
+const config = require('config');
 const port = process.env.PORT || 5000;
 
 //Configure mongoose's promise to global promise
@@ -36,15 +37,22 @@ if(!isProduction) {
 const Producer = require('./producers/index');
 Producer.start();
 
-//Models & routes
-// require('./models/Users');
-// require('./models/Invites');
-// require('./models/PasswordRequests');
 require('./config/passport');
 
 /** set up routes {API Endpoints} */
 routes(router);
 app.use('/api', router);
+
+
+// Initialize slack connection
+const { createEventAdapter } = require('@slack/events-api');
+const slackEvents = createEventAdapter(config.get('slack.signing_secret'));
+// And mount the event handler on a route
+app.use('/slack/events', slackEvents.expressMiddleware());
+// And Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
+slackEvents.on('message', (event)=> {
+    console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+});
 
 //Error handlers & middlewares
 if(!isProduction) {
