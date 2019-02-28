@@ -5,6 +5,7 @@ const squads = require('./squads');
 const tools = require('./tools');
 const dashboards = require('./dashboards');
 const okrs = require('./okrs');
+const goals = require('./goals');
 
 module.exports = (router) => {
     users(router);
@@ -14,4 +15,5 @@ module.exports = (router) => {
     tools(router);
     dashboards(router);
     okrs(router);
+    goals(router);
 };

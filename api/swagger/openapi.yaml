@@ -362,6 +362,15 @@ components:
           type: boolean
         period:
           $ref: '#/components/schemas/Period'
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Goal's ID.
+        goal:
+          description: Goal
+          type: string
 paths:
   /invite:
     post:
@@ -1578,5 +1587,152 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
           description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /goals:
+    get:
+      summary: Get user goals.
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      responses:
+        '200':    # status code
+          description: A JSON containing the current personal goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Add a personal goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goal:
+                  type: string
+                  description: New goal
+      responses:
+        '200':    # status code
+          description: A JSON containing the goal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goal:
+                    $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /users/:id/goals:
+    get:
+      summary: Get another user goals. (For superadmin)
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the user
+      responses:
+        '200':    # status code
+          description: A JSON containing the current user's personal goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /goals/:id:
+    post:
+      summary: Update a goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goal:
+                  type: string
+                  description: Updated goal
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated goal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goal:
+                    $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown Goal'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the Goal
+      responses:
+        '200':    # status code
+          description: Goal deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown Goal'
         '422':
           $ref: '#/components/responses/MissingParam'

@@ -153,4 +153,30 @@ db.Okrs.belongsTo(db.Squads, {
     as: 'squad',
 });
 
+db.Users.hasMany(db.UserGoals, {
+    foreignKey: 'UserId',
+    sourceKey: 'id',
+    as: 'goals',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.UserGoals.belongsTo(db.Users, {
+    foreignKey: 'UserId',
+    sourceKey: 'id',
+    as: 'user',
+});
+
+db.Periods.hasMany(db.UserGoals, {
+    foreignKey: 'PeriodId',
+    sourceKey: 'id',
+    as: 'goals',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.UserGoals.belongsTo(db.Periods, {
+    foreignKey: 'PeriodId',
+    sourceKey: 'id',
+    as: 'period',
+});
+
 module.exports = db;

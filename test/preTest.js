@@ -5,6 +5,8 @@ module.exports = {
         return models.PasswordRequests.destroy({where: {}}).then(() => {
             return models.Tools.destroy({where: {}});
         }).then(() => {
+            return models.UserGoals.destroy({where: {}});
+        }).then(() => {
             return models.ToolCategories.destroy({where: {}});
         }).then(() => {
             return models.Okrs.destroy({where: {}});
