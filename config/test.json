@@ -14,5 +14,8 @@
   },
   "kpi-board": {
     "host": "http://localhost:5001/api"
+  },
+  "fft": {
+    "host": "http://localhost:5003/api"
   }
 }
