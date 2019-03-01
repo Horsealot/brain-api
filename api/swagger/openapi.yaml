@@ -405,9 +405,9 @@ components:
             title:
               type: string
               description: Media title.
-            text:
+            headline:
               type: string
-              description: Media text.
+              description: Media headline.
             image:
               type: string
               description: Media image.
@@ -903,7 +903,7 @@ paths:
           description: 'Unknown squad'
         '422':
           $ref: '#/components/responses/MissingParam'
-  /tools/category/${categoryId}:
+  /tools/category/{categoryId}:
     delete:
       summary: Delete a category.
       security:
@@ -978,7 +978,7 @@ paths:
           description: 'Unknown category'
         '422':
           $ref: '#/components/responses/MissingParam'
-  /tools/${toolId}:
+  /tools/{toolId}:
     post:
       summary: Update a tool.
       security:
@@ -1177,7 +1177,7 @@ paths:
                     $ref: '#/components/schemas/DisplayedDashboard'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-  /dashboards/:id:
+  /dashboards/{id}:
     get:
       summary: Get a dashboard.
       security:
@@ -1292,7 +1292,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
           description: 'Unknown dashboard'
-  /dashboards/:id/module:
+  /dashboards/{id}/module:
     post:
       summary: Add a new module to a dashboard
       security:
@@ -1349,7 +1349,7 @@ paths:
           description: 'Unknown dashboard'
         '422':
           $ref: '#/components/responses/MissingParam'
-  /dashboards/:id/module/:moduleId:
+  /dashboards/{id}/module/{moduleId}:
     post:
       summary: Update a single module from a dashboard
       security:
@@ -1560,7 +1560,7 @@ paths:
                           $ref: '#/components/schemas/OKR'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-  /okrs/:id:
+  /okrs/{id}:
     post:
       summary: Update an okr
       security:
@@ -1685,7 +1685,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '422':
           $ref: '#/components/responses/MissingParam'
-  /users/:id/goals:
+  /users/{id}/goals:
     get:
       summary: Get another user goals. (For superadmin)
       security:
@@ -1713,7 +1713,7 @@ paths:
                       $ref: '#/components/schemas/Goal'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-  /goals/:id:
+  /goals/{id}:
     post:
       summary: Update a goal
       security:
@@ -1798,3 +1798,24 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/MediaMessage'
+  /food-for-thought/{id}:
+    delete:
+      summary: Delete message
+      security:
+      - bearerAuth: []
+      tags:
+      - Food for thought
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the message
+      responses:
+        '200':
+          description: Message deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
