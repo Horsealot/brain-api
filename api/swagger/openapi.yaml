@@ -19,7 +19,82 @@ components:
       description: A parameter is missing
     NotFound:
       description: Resource not found
+    BadRequest:
+      description: Bad request
+    UnauthorizedAccess:
+      description: User cannot access this resource
   schemas:
+    Tools:
+      description: Tools schema
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolCategory'
+    ToolCategory:
+      description: Tool category schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The category ID.
+        isSquad:
+          type: boolean
+          description: Is category linked to a squad
+        name:
+          type: string
+          description: Category's name.
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+    Tool:
+      description: Tool schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The tool ID.
+        icon:
+          type: string
+          description: Tool's icon.
+        link:
+          type: string
+          description: Tool's link.
+        name:
+          type: string
+          description: Tool's name.
+    Squad:
+      description: Squad schema
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The squad ID.
+        name:
+          type: string
+          description: Squad's name.
+        slug:
+          type: string
+          description: Squad's slug.
+    SquadFull:
+      description: Squad schema including its members
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The squad ID.
+        name:
+          type: string
+          description: Squad's name.
+        slug:
+          type: string
+          description: Squad's slug.
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
     AuthUser:
       description: User schema when returned by an authentication endpoint
       type: object
@@ -150,14 +225,210 @@ components:
           description: User's roles.
           items:
             type: string
+    SimpleDashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+    Module:
+      type: object
+      properties:
+        id:
+          description: Module's id
+          type: string
+        title:
+          description: Module's title
+          type: string
+        type:
+          description: Module's type
+          type: string
+        order:
+          description: Module's order
+          type: number
+        width:
+          description: Module's width (1,2,3,4)
+          type: number
+        properties:
+          description: Module's properties
+          type: string
+    Dashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: Module's id
+                type: string
+              type:
+                description: Module's type
+                type: string
+              order:
+                description: Module's order
+                type: number
+              width:
+                description: Module's width (1,2,3,4)
+                type: number
+              properties:
+                description: Module's properties
+                type: string
+    DisplayedDashboard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Dashboard's ID.
+        name:
+          description: Dashboard's name
+          type: string
+        squadId:
+          description: Dashboard's squad
+          type: string
+        productId:
+          description: Dashboard's product
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: Module's id
+                type: string
+              type:
+                description: Module's type
+                type: string
+              width:
+                description: Module's width (1,2,3,4)
+                type: number
+              data:
+                description: Module's data
+                type: string
+    Period:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Period's ID.
+        name:
+          description: Period's name
+          type: string
+        startDate:
+          description: Period's start date
+          type: string
+          format: date
+        endDate:
+          description: Period's end date
+          type: string
+          format: date
+    OKR:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: OKR's ID.
+        picture:
+          description: OKR's picture link
+          type: string
+        link:
+          description: OKR's link
+          type: string
+        isSquad:
+          description: Is a squad OKR
+          type: boolean
+        period:
+          $ref: '#/components/schemas/Period'
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Goal's ID.
+        goal:
+          description: Goal
+          type: string
+    MediaMessage:
+      description: Media message
+      type: object
+      properties:
+        id:
+          type: string
+          description: The Message ID.
+        author:
+          type: string
+          description: Message author.
+        text:
+          type: string
+          description: Message text content.
+        createdAt:
+          type: string
+          description: Message creation date.
+        media:
+          type: object
+          properties:
+            source:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Source name.
+                icon:
+                  type: string
+                  description: Source icon.
+                link:
+                  type: string
+                  description: Source link.
+            title:
+              type: string
+              description: Media title.
+            text:
+              type: string
+              description: Media text.
+            image:
+              type: string
+              description: Media image.
+            thumb:
+              type: string
+              description: Media thumb image.
 paths:
   /invite:
     post:
-      summary: Invite a new user.
+      summary: Invite a new user. If the user is already existing, he is directly added to the squad
       tags:
       - Auth
       security:
       - bearerAuth: []
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the target squad
+        schema:
+          type: integer
+        required: true
       requestBody:
         required: true
         content:
@@ -305,25 +576,36 @@ paths:
           $ref: '#/components/responses/MissingParam'
   /users:
     get:
-      summary: Get a list of all the users.
+      summary: Get a list of all the users of the target squad. If the user is a super admin and no squad context is provided, returns a list of all the squads and their users.
       security:
       - bearerAuth: []
       tags:
       - Users
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: false
       responses:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '200':    # status code
-          description: A JSON containing the list of all the users
+          description: A JSON containing the list of all the users of the squad or all the squad for a super admin
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  users:
+                  squads:
+                    description: For a super admin
                     type: array
                     items:
-                      $ref: '#/components/schemas/AdminUser'
+                      $ref: '#/components/schemas/SquadFull'
+                  squad:
+                    description: For a squad admin
+                    $ref: '#/components/schemas/SquadFull'
   /squads:
     get:
       summary: Get a list of all the users in their respective squad.
@@ -348,6 +630,39 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                squad:
+                  type: object
+                  properties:
+                    name:
+                      description: Squad name
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new squad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/Squad'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: Squad is already existing
   /users/{userId}:
     get:
       summary: Get a single user.
@@ -388,25 +703,30 @@ paths:
               type: object
               properties:
                 firstname:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 lastname:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 picture:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 description:
-                  description: Limited to the user
+                  description: Limited to the user or super admin
                   type: string
                 jobTitle:
-                  description: Limited to an admin
+                  description: Limited to an admin or super admin
                   type: string
                 scorecard:
-                  description: Limited to an admin
+                  description: Limited to an admin or super admin
                   type: string
                 roles:
-                  description: Limited to an admin
+                  description: Limited to a super admin
+                  type: array
+                  items:
+                    type: string
+                role:
+                  description: Limited to a squad admin or super admin
                   type: array
                   items:
                     type: string
@@ -434,3 +754,1047 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+  /users/{userId}/squads:
+    delete:
+      summary: Remove a user from a squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to remove
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: User has been removed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Add a user to a squad or modify his role.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                squad:
+                  type: object
+                  properties:
+                    role:
+                      description: User role in the squad
+                      type: string
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the list of all the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /me:
+    get:
+      summary: Get logged in user.
+      security:
+      - bearerAuth: []
+      tags:
+      - Users
+      responses:
+        '200':    # status code
+          description: A JSON containing the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /tools/category:
+    post:
+      summary: Create or update a category.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: object
+                  properties:
+                    id:
+                      description: Category id (if modification)
+                      type: string
+                    name:
+                      description: Category name
+                      type: string
+                    order:
+                      description: Category order
+                      type: number
+                    squadId:
+                      description: Category's squad (for admin only)
+                      type: number
+      responses:
+        '200':    # status code
+          description: A JSON containing the new category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown squad'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /tools/category/${categoryId}:
+    delete:
+      summary: Delete a category.
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: categoryId
+        schema:
+          type: string
+        required: true
+        description: ID of the category to update
+      tags:
+      - Tools
+      responses:
+        '200':    # status code
+          description: Category deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+  /tools:
+    get:
+      summary: Get user's tools.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ToolCategory'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+    post:
+      summary: Create a tool.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      responses:
+        '200':    # status code
+          description: A JSON containing the new category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown category'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /tools/${toolId}:
+    post:
+      summary: Update a tool.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: object
+                  properties:
+                    name:
+                      description: Tool's name
+                      type: string
+                    icon:
+                      description: Tool's name
+                      type: string
+                    link:
+                      description: Tool's link
+                      type: string
+                    order:
+                      description: Tool's order
+                      type: number
+      responses:
+        '200':    # status code
+          description: A JSON containing the new tool
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a category.
+      security:
+      - bearerAuth: []
+      tags:
+      - Tools
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to delete
+      responses:
+        '200':    # status code
+          description: Tool deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+  /dashboards:
+    get:
+      summary: Get a list of dashboards.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SimpleDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboard:
+                  type: object
+                  properties:
+                    name:
+                      description: Dashboard's name
+                      type: string
+                    squadId:
+                      description: Dashboard's squad
+                      type: string
+                    productId:
+                      description: Dashboard's product
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /dashboards/my:
+    get:
+      summary: Get my active dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /dashboards/kpis:
+    get:
+      summary: Get available kpis.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the availables kpis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /dashboards/:id:
+    get:
+      summary: Get a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
+      responses:
+        '200':    # status code
+          description: A JSON containing the dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/DisplayedDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Update a dashboard and its component.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboard:
+                  type: object
+                  properties:
+                    name:
+                      description: Dashboard's name
+                      type: string
+                    squadId:
+                      description: Dashboard's squad
+                      type: string
+                    productId:
+                      description: Dashboard's product
+                      type: string
+                    modules:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            description: Module's type
+                            type: string
+                          order:
+                            description: Module's order
+                            type: number
+                          width:
+                            description: Module's width (1,2,3,4)
+                            type: number
+                          properties:
+                            description: Module's properties
+                            type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new tool
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Dashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown tool'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a dashboard.
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to delete
+      responses:
+        '200':    # status code
+          description: Dashboard deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard'
+  /dashboards/:id/module:
+    post:
+      summary: Add a new module to a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: object
+                  properties:
+                    title:
+                      description: Module's title
+                      type: number
+                    type:
+                      description: Module's type
+                      type: string
+                    order:
+                      description: Module's order
+                      type: number
+                    width:
+                      description: Module's width (1,2,3,4)
+                      type: number
+                    properties:
+                      description: Module's properties
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the new module
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /dashboards/:id/module/:moduleId:
+    post:
+      summary: Update a single module from a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: object
+                  properties:
+                    title:
+                      description: Module's title
+                      type: number
+                    type:
+                      description: Module's type
+                      type: string
+                    order:
+                      description: Module's order
+                      type: number
+                    width:
+                      description: Module's width (1,2,3,4)
+                      type: number
+                    properties:
+                      description: Module's properties
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated module
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/Module'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard or module'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Remove a module from a dashboard
+      security:
+      - bearerAuth: []
+      tags:
+      - Dashboard
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
+      responses:
+        '200':    # status code
+          description: Module deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown dashboard or module'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /okrs:
+    get:
+      summary: Get an OKR.
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    $ref: '#/components/schemas/Period'
+                  okr:
+                    $ref: '#/components/schemas/OKR'
+                  squadOkr:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create an okr
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context (if kpi is for a squad)
+        schema:
+          type: integer
+        required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                okr:
+                  type: object
+                  properties:
+                    link:
+                      description: OKR's link
+                      type: string
+                    picture:
+                      description: OKR's picture link
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the created OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /okrs/past:
+    get:
+      summary: Get past OKRS.
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the OKR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  okrs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        period:
+                          $ref: '#/components/schemas/Period'
+                        okr:
+                          $ref: '#/components/schemas/OKR'
+                        squadOkr:
+                          $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /okrs/:id:
+    post:
+      summary: Update an okr
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                okr:
+                  type: object
+                  properties:
+                    link:
+                      description: OKR's link
+                      type: string
+                    picture:
+                      description: OKR's picture link
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated okr
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  okr:
+                    $ref: '#/components/schemas/OKR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete an OKR
+      security:
+      - bearerAuth: []
+      tags:
+      - OKR
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      responses:
+        '200':    # status code
+          description: OKR deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown OKR'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /goals:
+    get:
+      summary: Get user goals.
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      responses:
+        '200':    # status code
+          description: A JSON containing the current personal goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Add a personal goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goal:
+                  type: string
+                  description: New goal
+      responses:
+        '200':    # status code
+          description: A JSON containing the goal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goal:
+                    $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /users/:id/goals:
+    get:
+      summary: Get another user goals. (For superadmin)
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the user
+      responses:
+        '200':    # status code
+          description: A JSON containing the current user's personal goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /goals/:id:
+    post:
+      summary: Update a goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goal:
+                  type: string
+                  description: Updated goal
+      responses:
+        '200':    # status code
+          description: A JSON containing the updated goal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goal:
+                    $ref: '#/components/schemas/Goal'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown Goal'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+    delete:
+      summary: Delete a goal
+      security:
+      - bearerAuth: []
+      tags:
+      - Goals
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the Goal
+      responses:
+        '200':    # status code
+          description: Goal deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
+        '404':
+          description: 'Unknown Goal'
+        '422':
+          $ref: '#/components/responses/MissingParam'
+  /food-for-thought:
+    get:
+      summary: Get messages
+      security:
+      - bearerAuth: []
+      tags:
+      - Food for thought
+      responses:
+        '200':
+          description: Media messages returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaMessage'

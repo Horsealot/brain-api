@@ -8,7 +8,7 @@ module.exports = (router) => {
     router.post('/login', auth.optional, (req, res, next) => {
         authcontroller.postLogin(req, res, next);
     });
-    router.post('/invite', auth.required, auth.admin, (req, res, next) => {
+    router.post('/invite', auth.required, auth.squadAdmin, (req, res, next) => {
         authcontroller.postInvite(req, res, next);
     });
     router.post('/reset/request', auth.optional, (req, res, next) => {

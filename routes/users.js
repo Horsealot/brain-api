@@ -12,10 +12,38 @@ module.exports = (router) => {
     });
 
     /**
+     * get squads members
+     */
+    router.get('/squads/:squadId', auth.required, auth.squadAdmin, (req, res, next) => {
+        usercontroller.getSquad(req, res, next);
+    });
+
+    /**
      * get all users
      */
-    router.get('/users', auth.required, auth.admin, (req, res, next) => {
+    router.get('/users', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
         usercontroller.getUsers(req, res, next);
+    });
+
+    /**
+     * get my user
+     */
+    router.get('/me', auth.required, auth.loadUser, (req, res, next) => {
+        usercontroller.getMe(req, res, next);
+    });
+
+    /**
+     * Add/Edit a user to a squad
+     */
+    router.post('/users/:id/squads', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
+        usercontroller.postUserSquads(req, res, next);
+    });
+
+    /**
+     * Remove a user from a squad
+     */
+    router.delete('/users/:id/squads', auth.required, auth.squadAdminOrSuperadmin, (req, res, next) => {
+        usercontroller.deleteUserSquads(req, res, next);
     });
 
     /**
@@ -28,7 +56,7 @@ module.exports = (router) => {
     /**
      * get a user
      */
-    router.post('/users/:id', auth.required, auth.loadUser, (req, res, next) => {
+    router.post('/users/:id', auth.required, auth.hasRightsOnUser, (req, res, next) => {
         usercontroller.postUser(req, res, next);
     });
     //

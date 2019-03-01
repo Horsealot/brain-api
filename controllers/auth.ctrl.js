@@ -2,35 +2,57 @@
 const passport = require('passport');
 const mongoose = require('mongoose');
 const notificationProducer = require('./../producers/notifications');
-const Users = mongoose.model('Users');
-const Invites = mongoose.model('Invites');
-const PasswordRequests = mongoose.model('PasswordRequests');
+// const Users = mongoose.model('Users');
+// const Invites = mongoose.model('Invites');
+// const PasswordRequests = mongoose.model('PasswordRequests');
+
+const models = require('./../models');
 
 module.exports = {
     postInvite: async (req, res, next) => {
         const {body: {email}} = req;
+        const squadId = req.squadId;
+        let errors = {};
         if (!email) {
-            return res.status(422).json({
-                errors: {
-                    email: 'is required'
-                }
+            errors.email = 'is required';
+        }
+        if (!squadId) {
+            errors.squad = 'is required';
+        }
+        if (!email || !squadId) {
+            return res.status(422).json({ errors });
+        }
+        let squad = await models.Squads.findOne({where: {id: squadId}});
+        if(!squad) {
+            return res.status(404).json({
+                errors: "Squad does not exist"
             });
         }
-        let existingUser = await Users.findOne({email: email});
+        let existingUser = await models.Users.findOne({where: {email: email}});
         if(existingUser) {
-            return res.status(409).json({
-                errors: "User is already existing"
-            });
-        }
-        const invite = new Invites({
-            email: email
-        });
+            const existingUserSquad = await models.UserSquads.findOne({where: {UserId: existingUser.id, SquadId: squadId}});
+            if(existingUserSquad) {
+                return res.status(409).json({
+                    errors: "User already in the squad"
+                });;
+            }
+            existingUser.addSquad(squad, {through: {role: 'USER'}});
 
-        return invite.save()
-            .then(() => {
-                notificationProducer.signup('http://localhost:3000/signup/', invite);
-                res.json({});
+            return existingUser.save().then(() => {
+                res.json({ created: 'added', user: {...existingUser.toAdminJSON(), role: 'USER'} });
+            })
+        } else {
+            const invite = new models.Invites({
+                email,
+                squadId
             });
+
+            return invite.save()
+                .then(() => {
+                    notificationProducer.signup('http://localhost:3000/signup/', invite);
+                    res.json({ status: 'invited' });
+                });
+        }
     },
     postSignup: async (req, res, next) => {
         const {body: {user}} = req;
@@ -46,26 +68,26 @@ module.exports = {
             });
         }
 
-        let invite = await Invites.findOne({'token': user.token});
+        let invite = await models.Invites.findOne({where: {'token': user.token}});
         if(!invite) {
             return res.status(404).json({
                 errors: "Token not found"
             });
         } else if(invite.isExpired()) {
-            invite.remove().then(() => res.status(410).json({
+            invite.destroy().then(() => res.status(410).json({
                 errors: "Token expired"
             }));
         }
 
-        let existingUser = await Users.findOne({email: invite.email});
+        let existingUser = await models.Users.findOne({where: {email: invite.email}});
         if(existingUser) {
-            invite.remove().then(() => {
+            invite.destroy().then(() => {
                 return res.status(401).json({
                     errors: "User already existing"
                 });
             });
         } else {
-            const finalUser = new Users({
+            const finalUser = new models.Users({
                 email: invite.email,
                 password: user.password,
                 firstname: user.firstname,
@@ -74,7 +96,7 @@ module.exports = {
             finalUser.setPassword(user.password);
             finalUser.setRoles();
             return finalUser.save().then(() => {
-                return invite.remove();
+                return invite.destroy();
             }).then(() => res.json({ user: finalUser.toAuthJSON() }));
         }
     },
@@ -118,14 +140,14 @@ module.exports = {
                 }
             });
         }
-        let passwordRequest = await PasswordRequests.findOne({token: token}).populate('user');
+        let passwordRequest = await models.PasswordRequests.findOne({where: {token: token}, include: ['user']});
         if(!passwordRequest) {
             return res.status(404).json({
                 errors: "not existing"
             });
         }
         if(passwordRequest.expiredAt < new Date()) {
-            passwordRequest.remove().then(() => {
+            passwordRequest.destroy().then(() => {
                 return res.status(410).json({
                     errors: "expired"
                 });
@@ -133,7 +155,7 @@ module.exports = {
         } else {
             passwordRequest.user.setPassword(password);
             passwordRequest.user.save().then(() => {
-                return passwordRequest.remove();
+                return passwordRequest.destroy();
             }).then(() => {
                 return res.status(200).json();
             })
@@ -150,29 +172,27 @@ module.exports = {
                 }
             });
         }
-        let user = await Users.findOne({email: email});
+
+        let user = await models.Users.findOne({where: {email: email}});
         if(!user) {
             return res.status(404).json({
                 errors: "not existing"
             });
         }
 
-        let existingPasswordRequest = await PasswordRequests.findOne({user: user});
+        let existingPasswordRequest = await models.PasswordRequests.findOne({where: {UserId: user.id}, include: ['user']});
         if(existingPasswordRequest && !existingPasswordRequest.isExpired()) {
             return res.status(409).json({
                 errors: "request already made"
             });
         } else if(existingPasswordRequest && existingPasswordRequest.isExpired()) {
             // delete and create a new one
-            await existingPasswordRequest.remove();
+            await existingPasswordRequest.destroy();
         }
 
-
-        const passwordRequest = new PasswordRequests({
-            user: user
-        });
-        return passwordRequest.save()
-            .then(() => {
+        return models.PasswordRequests.create({
+            UserId: user.id
+        }).then((passwordRequest) => {
                 notificationProducer.passwordResetRequest('http://localhost:3000/reset/', user, passwordRequest);
                 res.json({});
             });
