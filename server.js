@@ -43,17 +43,6 @@ require('./config/passport');
 routes(router);
 app.use('/api', router);
 
-
-// Initialize slack connection
-const { createEventAdapter } = require('@slack/events-api');
-const slackEvents = createEventAdapter(config.get('slack.signing_secret'));
-// And mount the event handler on a route
-app.use('/slack/events', slackEvents.expressMiddleware());
-// And Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
-slackEvents.on('message', (event)=> {
-    console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-});
-
 //Error handlers & middlewares
 if(!isProduction) {
     app.use((req, res, err) => {

@@ -371,6 +371,49 @@ components:
         goal:
           description: Goal
           type: string
+    MediaMessage:
+      description: Media message
+      type: object
+      properties:
+        id:
+          type: string
+          description: The Message ID.
+        author:
+          type: string
+          description: Message author.
+        text:
+          type: string
+          description: Message text content.
+        createdAt:
+          type: string
+          description: Message creation date.
+        media:
+          type: object
+          properties:
+            source:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Source name.
+                icon:
+                  type: string
+                  description: Source icon.
+                link:
+                  type: string
+                  description: Source link.
+            title:
+              type: string
+              description: Media title.
+            text:
+              type: string
+              description: Media text.
+            image:
+              type: string
+              description: Media image.
+            thumb:
+              type: string
+              description: Media thumb image.
 paths:
   /invite:
     post:
@@ -1736,3 +1779,22 @@ paths:
           description: 'Unknown Goal'
         '422':
           $ref: '#/components/responses/MissingParam'
+  /food-for-thought:
+    get:
+      summary: Get messages
+      security:
+      - bearerAuth: []
+      tags:
+      - Food for thought
+      responses:
+        '200':
+          description: Media messages returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaMessage'
