@@ -62,6 +62,19 @@ db.ToolCategories.belongsTo(db.Users, {
     as: 'user',
 });
 
+db.Squads.hasMany(db.HowTos, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'howTos',
+    onDelete: 'CASCADE',
+    hooks: true
+});
+db.HowTos.belongsTo(db.Squads, {
+    foreignKey: 'SquadId',
+    sourceKey: 'id',
+    as: 'squad',
+});
+
 db.Squads.hasMany(db.ToolCategories, {
     foreignKey: 'SquadId',
     sourceKey: 'id',

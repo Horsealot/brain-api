@@ -3,6 +3,8 @@ const models = require('./../models');
 module.exports = {
     cleanDB: (done) => {
         return models.PasswordRequests.destroy({where: {}}).then(() => {
+            return models.HowTos.destroy({where: {}});
+        }).then(() => {
             return models.Tools.destroy({where: {}});
         }).then(() => {
             return models.UserGoals.destroy({where: {}});

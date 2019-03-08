@@ -7,6 +7,7 @@ const dashboards = require('./dashboards');
 const okrs = require('./okrs');
 const goals = require('./goals');
 const foodForThought = require('./foodForThought');
+const howTos = require('./howTos');
 
 module.exports = (router) => {
     users(router);
@@ -18,4 +19,5 @@ module.exports = (router) => {
     okrs(router);
     goals(router);
     foodForThought(router);
+    howTos(router);
 };
