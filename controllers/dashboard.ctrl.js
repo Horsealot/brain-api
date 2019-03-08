@@ -228,7 +228,7 @@ var self = {
     },
     getMyDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({include: ['modules']});
+        let dashboard = await models.Dashboards.findOne({where: {SquadId: req.squadId}, include: ['modules']});
         if(!dashboard) {
             return res.sendStatus(404);
         }
@@ -237,6 +237,7 @@ var self = {
         }
         let moduleLoaders = [];
         dashboard = dashboard.toJSON();
+        dashboard.id = dashboard.publicId;
         dashboard.modules.forEach((module) => {
             moduleLoaders.push((callback) => {
                 dashboardModuleService.loadModuleStats(req.user, module).then((module) => {
