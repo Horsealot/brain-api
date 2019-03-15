@@ -8,6 +8,7 @@ const okrs = require('./okrs');
 const goals = require('./goals');
 const foodForThought = require('./foodForThought');
 const howTos = require('./howTos');
+const todos = require('./todos');
 
 module.exports = (router) => {
     users(router);
@@ -20,4 +21,5 @@ module.exports = (router) => {
     goals(router);
     foodForThought(router);
     howTos(router);
+    todos(router);
 };

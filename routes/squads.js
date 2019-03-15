@@ -10,4 +10,11 @@ module.exports = (router) => {
     router.post('/squads', auth.required, auth.admin, (req, res, next) => {
         squadcontroller.postSquad(req, res, next);
     });
+
+    /**
+     * Update a squad
+     */
+    router.post('/squads/:id', auth.required, auth.loadUser, (req, res, next) => {
+        squadcontroller.updateSquad(req, res, next);
+    });
 };

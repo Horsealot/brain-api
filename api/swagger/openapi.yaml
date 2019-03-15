@@ -4,8 +4,8 @@ info:
   title: Brain API
   version: 1.0.0
 servers:
-  - url: http://46.101.31.69:5000/api
-    description: Dev server
+- url: http://46.101.31.69:5000/api
+  description: Dev server
 components:
   securitySchemes:
     bearerAuth:
@@ -426,21 +426,39 @@ components:
         version:
           type: integer
           description: How to's version.
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Task's ID.
+        name:
+          description: Task's content
+          type: string
+        inProgress:
+          description: If task is in progress
+          type: boolean
+        done:
+          description: If task is done
+          type: boolean
+        assignee:
+          description: User it is assigned to
+          type: string
 paths:
   /invite:
     post:
       summary: Invite a new user. If the user is already existing, he is directly added to the squad
       tags:
-        - Auth
+      - Auth
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the target squad
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the target squad
+        schema:
+          type: integer
+        required: true
       requestBody:
         required: true
         content:
@@ -451,7 +469,7 @@ paths:
                 email:
                   type: string
               required:
-                - email
+              - email
       responses:
         '200':    # status code
           description: Invite sent
@@ -465,7 +483,7 @@ paths:
     post:
       summary: Log in.
       tags:
-        - Auth
+      - Auth
       requestBody:
         required: true
         content:
@@ -481,7 +499,7 @@ paths:
                     password:
                       type: string
               required:
-                - user
+              - user
       responses:
         '200':    # status code
           description: A JSON describing the user and his bearer token
@@ -497,7 +515,7 @@ paths:
     post:
       summary: Sign up using an invite token.
       tags:
-        - Auth
+      - Auth
       requestBody:
         required: true
         content:
@@ -517,7 +535,7 @@ paths:
                     lastname:
                       type: string
               required:
-                - user
+              - user
       responses:
         '200':    # status code
           description: A JSON describing the user and his bearer token
@@ -537,7 +555,7 @@ paths:
     post:
       summary: Reset user's password
       tags:
-        - Auth
+      - Auth
       requestBody:
         required: true
         content:
@@ -550,8 +568,8 @@ paths:
                 password:
                   type: string
               required:
-                - token
-                - password
+              - token
+              - password
       responses:
         '200':    # status code
           description: Password has been reset
@@ -565,7 +583,7 @@ paths:
     post:
       summary: Request a new password reset token
       tags:
-        - Auth
+      - Auth
       requestBody:
         required: true
         content:
@@ -576,7 +594,7 @@ paths:
                 email:
                   type: string
               required:
-                - email
+              - email
       responses:
         '200':    # status code
           description: Request successful
@@ -590,16 +608,16 @@ paths:
     get:
       summary: Get a list of all the users of the target squad. If the user is a super admin and no squad context is provided, returns a list of all the squads and their users.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Users
+      - Users
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: false
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: false
       responses:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -622,9 +640,9 @@ paths:
     get:
       summary: Get a list of all the users in their respective squad.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Users
+      - Users
       responses:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -645,9 +663,9 @@ paths:
     post:
       summary: Create a new squad.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Squads
+      - Squads
       requestBody:
         required: true
         content:
@@ -669,26 +687,77 @@ paths:
               schema:
                 type: object
                 properties:
-                  user:
+                  squad:
                     $ref: '#/components/schemas/Squad'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '409':
           description: Squad is already existing
+  /squads/{squadId}:
+    post:
+      summary: Update a squad.
+      security:
+      - bearerAuth: []
+      tags:
+      - Squads
+      parameters:
+      - in: path
+        name: squadId
+        schema:
+          type: string
+        required: true
+        description: ID of the squad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                squad:
+                  type: object
+                  properties:
+                    name:
+                      description: Squad name
+                      type: string
+                    asanaProjectId:
+                      description: Squad Asana project
+                      type: string
+      responses:
+        '200':    # status code
+          description: A JSON describing the result of each new parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  squad:
+                    type: object
+                    properties:
+                      name:
+                        description: updated/conflict
+                        type: string
+                      asanaProjectId:
+                        description: updated/not allowed
+                        type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/UnauthorizedAccess'
   /users/{userId}:
     get:
       summary: Get a single user.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Users
+      - Users
       parameters:
-        - in: path
-          name: userId
-          schema:
-            type: string
-          required: true
-          description: ID of the user to get
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
       responses:
         '200':    # status code
           description: A JSON containing the list of all the users
@@ -704,9 +773,9 @@ paths:
     post:
       summary: Update a single user.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Users
+      - Users
       requestBody:
         required: true
         content:
@@ -748,12 +817,12 @@ paths:
                   items:
                     type: string
       parameters:
-        - in: path
-          name: userId
-          schema:
-            type: string
-          required: true
-          description: ID of the user to get
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
       responses:
         '200':    # status code
           description: A JSON containing the list of all the users
@@ -770,22 +839,22 @@ paths:
     delete:
       summary: Remove a user from a squad.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Squads
+      - Squads
       parameters:
-        - in: path
-          name: userId
-          schema:
-            type: string
-          required: true
-          description: ID of the user to remove
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to remove
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: User has been removed
@@ -800,9 +869,9 @@ paths:
     post:
       summary: Add a user to a squad or modify his role.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Squads
+      - Squads
       requestBody:
         required: true
         content:
@@ -817,18 +886,18 @@ paths:
                       description: User role in the squad
                       type: string
       parameters:
-        - in: path
-          name: userId
-          schema:
-            type: string
-          required: true
-          description: ID of the user to get
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: ID of the user to get
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the list of all the users
@@ -853,9 +922,9 @@ paths:
     get:
       summary: Get logged in user.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Users
+      - Users
       responses:
         '200':    # status code
           description: A JSON containing the user
@@ -872,9 +941,9 @@ paths:
     post:
       summary: Create or update a category.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Tools
+      - Tools
       requestBody:
         required: true
         content:
@@ -919,16 +988,16 @@ paths:
     delete:
       summary: Delete a category.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: categoryId
-          schema:
-            type: string
-          required: true
-          description: ID of the category to update
+      - in: path
+        name: categoryId
+        schema:
+          type: string
+        required: true
+        description: ID of the category to update
       tags:
-        - Tools
+      - Tools
       responses:
         '200':    # status code
           description: Category deleted
@@ -940,16 +1009,16 @@ paths:
     get:
       summary: Get user's tools.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Tools
+      - Tools
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the user
@@ -969,9 +1038,9 @@ paths:
     post:
       summary: Create a tool.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Tools
+      - Tools
       responses:
         '200':    # status code
           description: A JSON containing the new category
@@ -994,16 +1063,16 @@ paths:
     post:
       summary: Update a tool.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Tools
+      - Tools
       parameters:
-        - in: path
-          name: toolId
-          schema:
-            type: string
-          required: true
-          description: ID of the tool to update
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to update
       requestBody:
         required: true
         content:
@@ -1047,16 +1116,16 @@ paths:
     delete:
       summary: Delete a category.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Tools
+      - Tools
       parameters:
-        - in: path
-          name: toolId
-          schema:
-            type: string
-          required: true
-          description: ID of the tool to delete
+      - in: path
+        name: toolId
+        schema:
+          type: string
+        required: true
+        description: ID of the tool to delete
       responses:
         '200':    # status code
           description: Tool deleted
@@ -1070,16 +1139,16 @@ paths:
     get:
       summary: Get a list of dashboards.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard to get
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
       responses:
         '200':    # status code
           description: A JSON containing the dashboard
@@ -1097,9 +1166,9 @@ paths:
     post:
       summary: Create a dashboard.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       requestBody:
         required: true
         content:
@@ -1141,16 +1210,16 @@ paths:
     get:
       summary: Get my active dashboard.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the dashboard
@@ -1167,16 +1236,16 @@ paths:
     get:
       summary: Get available kpis.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard to get
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
       responses:
         '200':    # status code
           description: A JSON containing the availables kpis
@@ -1193,16 +1262,16 @@ paths:
     get:
       summary: Get a dashboard.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard to get
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to get
       responses:
         '200':    # status code
           description: A JSON containing the dashboard
@@ -1218,16 +1287,16 @@ paths:
     post:
       summary: Update a dashboard and its component.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard to update
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to update
       requestBody:
         required: true
         content:
@@ -1285,16 +1354,16 @@ paths:
     delete:
       summary: Delete a dashboard.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard to delete
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard to delete
       responses:
         '200':    # status code
           description: Dashboard deleted
@@ -1308,16 +1377,16 @@ paths:
     post:
       summary: Add a new module to a dashboard
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
       requestBody:
         required: true
         content:
@@ -1365,22 +1434,22 @@ paths:
     post:
       summary: Update a single module from a dashboard
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard
-        - in: path
-          name: moduleId
-          schema:
-            type: string
-          required: true
-          description: ID of the module
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
       requestBody:
         required: true
         content:
@@ -1427,22 +1496,22 @@ paths:
     delete:
       summary: Remove a module from a dashboard
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Dashboard
+      - Dashboard
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the dashboard
-        - in: path
-          name: moduleId
-          schema:
-            type: string
-          required: true
-          description: ID of the module
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the dashboard
+      - in: path
+        name: moduleId
+        schema:
+          type: string
+        required: true
+        description: ID of the module
       responses:
         '200':    # status code
           description: Module deleted
@@ -1458,16 +1527,16 @@ paths:
     get:
       summary: Get an OKR.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - OKR
+      - OKR
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the OKR
@@ -1487,22 +1556,22 @@ paths:
     post:
       summary: Create an okr
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - OKR
+      - OKR
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the okr
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context (if kpi is for a squad)
-          schema:
-            type: integer
-          required: false
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context (if kpi is for a squad)
+        schema:
+          type: integer
+        required: false
       requestBody:
         required: true
         content:
@@ -1541,16 +1610,16 @@ paths:
     get:
       summary: Get past OKRS.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - OKR
+      - OKR
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the OKR
@@ -1576,16 +1645,16 @@ paths:
     post:
       summary: Update an okr
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - OKR
+      - OKR
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the okr
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
       requestBody:
         required: true
         content:
@@ -1623,16 +1692,16 @@ paths:
     delete:
       summary: Delete an OKR
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - OKR
+      - OKR
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the okr
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the okr
       responses:
         '200':    # status code
           description: OKR deleted
@@ -1648,9 +1717,9 @@ paths:
     get:
       summary: Get user goals.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Goals
+      - Goals
       responses:
         '200':    # status code
           description: A JSON containing the current personal goals
@@ -1668,9 +1737,9 @@ paths:
     post:
       summary: Add a personal goal
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Goals
+      - Goals
       requestBody:
         required: true
         content:
@@ -1701,16 +1770,16 @@ paths:
     get:
       summary: Get another user goals. (For superadmin)
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Goals
+      - Goals
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the user
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the user
       responses:
         '200':    # status code
           description: A JSON containing the current user's personal goals
@@ -1729,16 +1798,16 @@ paths:
     post:
       summary: Update a goal
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Goals
+      - Goals
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the goal
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the goal
       requestBody:
         required: true
         content:
@@ -1770,16 +1839,16 @@ paths:
     delete:
       summary: Delete a goal
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Goals
+      - Goals
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the Goal
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the Goal
       responses:
         '200':    # status code
           description: Goal deleted
@@ -1795,9 +1864,9 @@ paths:
     get:
       summary: Get messages
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Food for thought
+      - Food for thought
       responses:
         '200':
           description: Media messages returned
@@ -1814,16 +1883,16 @@ paths:
     delete:
       summary: Delete message
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - Food for thought
+      - Food for thought
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the message
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the message
       responses:
         '200':
           description: Message deleted
@@ -1831,21 +1900,20 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/UnauthorizedAccess'
-
   /how-to:
     get:
       summary: Get How to.
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - How to
+      - How to
       parameters:
-        - in: header
-          name: Brain-squad
-          description: Id of the squad context
-          schema:
-            type: integer
-          required: true
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
       responses:
         '200':    # status code
           description: A JSON containing the How to
@@ -1866,9 +1934,9 @@ paths:
     post:
       summary: Create or update a Brain or squad How to
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - How to
+      - How to
       requestBody:
         required: true
         content:
@@ -1905,16 +1973,16 @@ paths:
     delete:
       summary: Delete an How to
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       tags:
-        - How to
+      - How to
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID of the How to
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+        description: ID of the How to
       responses:
         '200':    # status code
           description: How to deleted
@@ -1924,3 +1992,44 @@ paths:
           $ref: '#/components/responses/UnauthorizedAccess'
         '404':
           description: 'Unknown How to'
+  /todo:
+    get:
+      summary: Get Squad todo.
+      security:
+      - bearerAuth: []
+      tags:
+      - TODO
+      parameters:
+      - in: header
+        name: Brain-squad
+        description: Id of the squad context
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':    # status code
+          description: A JSON containing the tasks of the asana project linked to the squad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: object
+                    properties:
+                      todo:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+                      inProgress:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+                      done:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: If the squad is not linked to an Asana project or if Asana does not recognized the project

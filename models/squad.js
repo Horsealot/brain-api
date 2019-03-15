@@ -6,11 +6,17 @@ module.exports = (sequelize, DataTypes) => {
         slug: {
             type: DataTypes.STRING,
             unique: true
-        }
+        },
+        asanaProjectId: DataTypes.STRING
     }, {});
     Squads.associate = function(models) {
         // associations can be defined here
     };
+
+
+    const EDITABLE = [
+        "name", "asanaProjectId"
+    ];
 
 
     /**
@@ -40,6 +46,24 @@ module.exports = (sequelize, DataTypes) => {
             user.setSlug(user.name)
         }
     });
+
+    Squads.prototype.updateFromEntity = function(newSquad) {
+        const updateStatus = Object.assign({}, newSquad);
+        for(let key in newSquad) {
+            const upperCaseKey = key.replace(/^\w/, c => c.toUpperCase());
+            if(EDITABLE.indexOf(key) >= 0) {
+                if(typeof this["set" + upperCaseKey] === 'function') {
+                    this["set" + upperCaseKey](newSquad[key]);
+                } else {
+                    this[key] = newSquad[key];
+                }
+                updateStatus[key] = "updated";
+            } else {
+                updateStatus[key] = "not allowed";
+            }
+        }
+        return updateStatus;
+    };
 
   return Squads;
 };

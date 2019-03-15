@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "amqplib": "^0.5.3",
+    "asana": "^0.16.6",
     "async": "latest",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
