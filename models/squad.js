@@ -26,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
         return {
             id: this.id,
             name: this.name,
-            slug: this.slug
+            slug: this.slug,
+            asanaProjectId: this.asanaProjectId
         };
     };
     /**
