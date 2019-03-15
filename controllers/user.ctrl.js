@@ -7,7 +7,7 @@ const UserRole = require("../old_models/mongoose/UserRole");
 
 const userRightsNomenclature = require('./../routes/tools/userRightsNomenclature.json');
 
-var self = {
+const self = {
     // getUsers: (req, res, next) => {
     //     const page = (req.query.page ? req.query.page : 1) - 1;
     //     models.Users.findAll({ offset: page*20, limit: 20 }).then((users)=> {
@@ -20,7 +20,7 @@ var self = {
     // },
     getSquad: (req, res, next) => {
         models.Squads.findOne({where: {id: req.squadId}, include: ['users']}).then((squad) => {
-            if(!squad) {
+            if (!squad) {
                 return res.sendStatus(404);
             }
             let response = squad.toJSON();
@@ -37,7 +37,7 @@ var self = {
     },
     getUsers: (req, res, next) => {
         const squadId = req.squadId;
-        if(squadId) {
+        if (squadId) {
             return self.getSquad(req, res, next);
         } else {
             models.Squads.findAll({include: ['users']}).then((squads) => {
@@ -58,14 +58,14 @@ var self = {
         }
     },
     getUser: (req, res, next) => {
-        if(req.user.publicId === req.params.id) {
+        if (req.user.publicId === req.params.id) {
             res.send({user: req.user.toAdminJSON()});
         } else {
-            models.Users.findOne({where: {publicId: req.params.id}, include: ['squads']}).then((user)=> {
-                if(!user) {
+            models.Users.findOne({where: {publicId: req.params.id}, include: ['squads']}).then((user) => {
+                if (!user) {
                     return res.sendStatus(404)
                 } else {
-                    if(UserRole.isSuperAdmin(req.user)) {
+                    if (UserRole.isSuperAdmin(req.user)) {
                         res.send({user: user.toAdminJSON()});
                     } else {
                         res.send({user: user.toJSON()});
@@ -96,8 +96,8 @@ var self = {
             const squads = {};
             users.forEach((user) => {
                 user.parseSquads().forEach((squad) => {
-                    if(!Array.isArray(squads[squad.name])) {
-                        squads[squad.name] = new Array();
+                    if (!Array.isArray(squads[squad.name])) {
+                        squads[squad.name] = [];
                     }
                     squads[squad.name].push(user.toJSON());
                 })
@@ -107,7 +107,7 @@ var self = {
         })
     },
     postUserSquads: (req, res, next) => {
-        if(!req.body.squad || !req.body.squad.role) {
+        if (!req.body.squad || !req.body.squad.role) {
             return res.status(422).json({
                 errors: {
                     squad: 'is required',
@@ -115,16 +115,16 @@ var self = {
                 }
             });
         }
-        if(!req.squadId) {
+        if (!req.squadId) {
             return res.sendStatus(400);
         }
         const {body: {squad: {role}}} = req;
-        models.Users.findOne({where: {publicId: req.params.id}}).then((user)=> {
-            if(!user) {
+        models.Users.findOne({where: {publicId: req.params.id}}).then((user) => {
+            if (!user) {
                 return res.sendStatus(404)
             }
             models.UserSquads.findOne({where: {UserId: user.id, SquadId: req.squadId}}).then((existingUserSquad) => {
-                if(!existingUserSquad) {
+                if (!existingUserSquad) {
                     existingUserSquad = new models.UserSquads({UserId: user.id, SquadId: req.squadId});
                 }
                 existingUserSquad.role = role;
@@ -137,15 +137,15 @@ var self = {
         });
     },
     deleteUserSquads: (req, res, next) => {
-        if(!req.squadId) {
+        if (!req.squadId) {
             return res.sendStatus(400);
         }
-        models.Users.findOne({where: {publicId: req.params.id}}).then((user)=> {
-            if(!user) {
+        models.Users.findOne({where: {publicId: req.params.id}}).then((user) => {
+            if (!user) {
                 return res.sendStatus(404)
             }
             models.UserSquads.findOne({where: {UserId: user.id, SquadId: req.squadId}}).then((existingUserSquad) => {
-                if(existingUserSquad) {
+                if (existingUserSquad) {
                     return existingUserSquad.destroy();
                 }
             }).then(() => {

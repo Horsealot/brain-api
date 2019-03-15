@@ -1,7 +1,7 @@
 const models = require('./../models');
 const UserRole = require("../old_models/mongoose/UserRole");
 
-var self = {
+const self = {
     postGoals: async (req, res, next) => {
         const {body: {goal}} = req;
         if (!goal || !goal.length) {
@@ -12,8 +12,13 @@ var self = {
             });
         }
         let dbGoal = new models.UserGoals({value: goal});
-        let currentPeriod = await models.Periods.findOne({where: {startDate: {$lte: new Date()}, endDate: {$gte: new Date()}}});
-        if(!currentPeriod) {
+        let currentPeriod = await models.Periods.findOne({
+            where: {
+                startDate: {$lte: new Date()},
+                endDate: {$gte: new Date()}
+            }
+        });
+        if (!currentPeriod) {
             return res.sendStatus(400);
         }
         dbGoal.PeriodId = currentPeriod.id;
@@ -37,14 +42,19 @@ var self = {
         }
         const {params: {id}} = req;
         let dbGoal = await models.UserGoals.findOne({where: {id: id}});
-        if(!dbGoal) {
+        if (!dbGoal) {
             return res.sendStatus(404);
         }
-        if(dbGoal.UserId !== req.user.id && !UserRole.isSuperAdmin(req.user)) {
+        if (dbGoal.UserId !== req.user.id && !UserRole.isSuperAdmin(req.user)) {
             return res.sendStatus(403);
         }
-        let currentPeriod = await models.Periods.findOne({where: {startDate: {$lte: new Date()}, endDate: {$gte: new Date()}}});
-        if(!currentPeriod || currentPeriod.id !== dbGoal.PeriodId) {
+        let currentPeriod = await models.Periods.findOne({
+            where: {
+                startDate: {$lte: new Date()},
+                endDate: {$gte: new Date()}
+            }
+        });
+        if (!currentPeriod || currentPeriod.id !== dbGoal.PeriodId) {
             return res.sendStatus(400);
         }
         dbGoal.value = goal;
@@ -59,14 +69,19 @@ var self = {
     deleteGoals: async (req, res, next) => {
         const {params: {id}} = req;
         let goal = await models.UserGoals.findOne({where: {id: id}});
-        if(!goal) {
+        if (!goal) {
             return res.sendStatus(404);
         }
-        if(goal.UserId !== req.user.id && !UserRole.isSuperAdmin(req.user)) {
+        if (goal.UserId !== req.user.id && !UserRole.isSuperAdmin(req.user)) {
             return res.sendStatus(403);
         }
-        let currentPeriod = await models.Periods.findOne({where: {startDate: {$lte: new Date()}, endDate: {$gte: new Date()}}});
-        if(!currentPeriod || currentPeriod.id !== goal.PeriodId) {
+        let currentPeriod = await models.Periods.findOne({
+            where: {
+                startDate: {$lte: new Date()},
+                endDate: {$gte: new Date()}
+            }
+        });
+        if (!currentPeriod || currentPeriod.id !== goal.PeriodId) {
             return res.sendStatus(400);
         }
 
@@ -84,7 +99,7 @@ var self = {
                 endDate: {$gte: new Date()}
             }
         });
-        if(!currentPeriod) {
+        if (!currentPeriod) {
             return res.sendStatus(400);
         }
         let goals = await models.UserGoals.findAll({where: {PeriodId: currentPeriod.id, UserId: req.user.id}});
@@ -98,7 +113,7 @@ var self = {
                 endDate: {$gte: new Date()}
             }
         });
-        if(!currentPeriod) {
+        if (!currentPeriod) {
             return res.sendStatus(400);
         }
         let goals = await models.UserGoals.findAll({where: {PeriodId: currentPeriod.id, UserId: id}});

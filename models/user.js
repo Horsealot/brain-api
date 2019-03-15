@@ -75,7 +75,7 @@ module.exports = (sequelize, DataTypes) => {
     User.prototype.setSocialMedias = function(socialMedias) {
         if(Array.isArray(socialMedias)) {
             this.socialMedias = [];
-            for(var i = 0; i < socialMedias.length; i++) {
+            for(let i = 0; i < socialMedias.length; i++) {
                 if(SocialMedias.validateSocialMedia(socialMedias[i])) {
                     this.socialMedias.push(socialMedias[i]);
                 }
@@ -243,7 +243,7 @@ module.exports = (sequelize, DataTypes) => {
     User.prototype.parseSquads = function() {
         let parsedSquad = [];
         if(this.squads) {
-            for(var i = 0; i<this.squads.length; i++) {
+            for(let i = 0; i<this.squads.length; i++) {
                 parsedSquad.push({
                     id: this.squads[i].id,
                     name: this.squads[i].name,

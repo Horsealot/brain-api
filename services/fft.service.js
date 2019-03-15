@@ -16,4 +16,4 @@ module.exports = {
         });
         return (await instance.delete('/medias/' + id)).data;
     }
-}
+};

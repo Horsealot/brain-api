@@ -32,7 +32,7 @@ module.exports = {
             });
         }).catch((err) => {
             console.log(err);
-            if(err.message && err.message == "Not Found") {
+            if(err.message && err.message === "Not Found") {
                 return res.status(404).json({
                     errors: 'Asana project does not exist'
                 });

@@ -4,10 +4,10 @@ const kpiService = require('./../services/kpi.service');
 const async = require("async");
 const dashboardModuleService = require("../services/dashboardModule.service");
 
-var self = {
+const self = {
     postDashboard: async (req, res, next) => {
         const {body: {dashboard}} = req;
-        if (!dashboard || !dashboard.name || (!dashboard.productId && !dashboard.squadId)) {
+        if (!dashboard || !dashboard.name || (!dashboard.productId && !dashboard.squadId)) {
             return res.status(422).json({
                 errors: {
                     name: 'is required'
@@ -15,17 +15,23 @@ var self = {
             });
         }
         let dbDashboard = new models.Dashboards(dashboard);
-        if(dashboard.productId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+        if (dashboard.productId) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-            if(!(await models.Products.findOne({where: {id: dashboard.productId}}))) {
+            if (!(await models.Products.findOne({where: {id: dashboard.productId}}))) {
                 return res.sendStatus(404);
             }
             dbDashboard.ProductId = dashboard.productId;
             dbDashboard.SquadId = null;
         } else {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dashboard.squadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: dashboard.squadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
             dbDashboard.SquadId = dashboard.squadId;
@@ -45,48 +51,54 @@ var self = {
         let dbDashboard;
         try {
             dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
-        } catch(err) {
+        } catch (err) {
             return res.sendStatus(400);
         }
-        if(!dbDashboard) {
+        if (!dbDashboard) {
             return res.sendStatus(404);
         }
         if (dbDashboard.ProductId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbDashboard.SquadId, role: 'ADMIN'}}))) {
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dbDashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
             return res.sendStatus(403);
         }
         dbDashboard.name = dashboard.name;
 
         let existingModules = await models.DashboardModules.findAll({where: {DashboardId: dbDashboard.id}});
-        while(existingModules.length) {
+        while (existingModules.length) {
             const existingModule = existingModules.pop();
             let moduleMustBeDeleted = true;
-            for(let i = 0; i < modules.length; i++) {
-                if(modules[i].id === existingModule.id) {
+            for (let i = 0; i < modules.length; i++) {
+                if (modules[i].id === existingModule.id) {
                     moduleMustBeDeleted = false;
                     existingModule.type = modules[i].type;
                     existingModule.properties = modules[i].properties;
                     modules[i] = existingModule;
                 }
             }
-            if(moduleMustBeDeleted) {
+            if (moduleMustBeDeleted) {
                 await existingModule.destroy();
             }
         }
         let error = [];
-        for(let i = 0; i < modules.length; i++) {
+        for (let i = 0; i < modules.length; i++) {
             let module = (modules[i] instanceof models.DashboardModules) ? modules[i] : new models.DashboardModules(modules[i]);
-            if(module.validateProperties() !== null) {
+            if (module.validateProperties() !== null) {
                 error.push(module.validateProperties().error);
             }
             module.DashboardId = dbDashboard.id;
             module.order = i;
             await module.save();
         }
-        if(error.length) {
+        if (error.length) {
             return res.json({modules: error});
         }
 
@@ -104,22 +116,28 @@ var self = {
         let dbDashboard;
         try {
             dbDashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
-        } catch(err) {
+        } catch (err) {
             return res.sendStatus(400);
         }
-        if(!dbDashboard) {
+        if (!dbDashboard) {
             return res.sendStatus(404);
         }
         if (dbDashboard.ProductId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbDashboard.SquadId, role: 'ADMIN'}}))) {
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dbDashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
             return res.sendStatus(403);
         }
         let error = [];
         module = new models.DashboardModules(module);
-        if(module.validateProperties() !== null) {
+        if (module.validateProperties() !== null) {
             return res.json({modules: module.validateProperties().error});
         }
         module.DashboardId = dbDashboard.id;
@@ -136,21 +154,27 @@ var self = {
         let dbDashboard;
         try {
             dbDashboard = await models.Dashboards.findOne({where: {publicId: id}});
-        } catch(err) {
+        } catch (err) {
             return res.sendStatus(400);
         }
-        if(!dbDashboard) {
+        if (!dbDashboard) {
             return res.sendStatus(404);
         }
         let dbModule = await models.DashboardModules.findOne({where: {DashboardId: dbDashboard.id, id: moduleId}});
-        if(!dbModule) {
+        if (!dbModule) {
             return res.sendStatus(404);
         }
         if (dbDashboard.ProductId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbDashboard.SquadId, role: 'ADMIN'}}))) {
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dbDashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
             return res.sendStatus(403);
         }
         dbModule.destroy().then(() => {
@@ -165,17 +189,23 @@ var self = {
         let dashboard;
         try {
             dashboard = await models.Dashboards.findOne({where: {publicId: id}});
-        } catch(err) {
+        } catch (err) {
             return res.sendStatus(400);
         }
-        if(!dashboard) {
+        if (!dashboard) {
             return res.sendStatus(404);
         }
         if (dashboard.ProductId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dashboard.SquadId, role: 'ADMIN'}}))) {
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
             return res.sendStatus(403);
         }
 
@@ -191,21 +221,27 @@ var self = {
         let dashboard;
         try {
             dashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
-        } catch(err) {
+        } catch (err) {
             return res.sendStatus(400);
         }
-        if(!dashboard) {
+        if (!dashboard) {
             return res.sendStatus(404);
         }
         if (dashboard.ProductId) {
-            if(!UserRole.isSuperAdmin(req.user)) {
+            if (!UserRole.isSuperAdmin(req.user)) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dashboard.SquadId, role: 'ADMIN'}}))) {
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
             return res.sendStatus(403);
         }
 
-        if(!dashboard.modules) {
+        if (!dashboard.modules) {
             dashboard.modules = [];
         }
         let moduleLoaders = [];
@@ -229,10 +265,10 @@ var self = {
     getMyDashboard: async (req, res, next) => {
         const {params: {id}} = req;
         let dashboard = await models.Dashboards.findOne({where: {SquadId: req.squadId}, include: ['modules']});
-        if(!dashboard) {
+        if (!dashboard) {
             return res.sendStatus(404);
         }
-        if(!dashboard.modules) {
+        if (!dashboard.modules) {
             dashboard.modules = [];
         }
         let moduleLoaders = [];
@@ -252,12 +288,16 @@ var self = {
         });
     },
     getDashboards: (req, res, next) => {
-        if(!req.squadId) {
+        if (!req.squadId) {
             return res.sendStatus(403);
         }
         let categories = [];
-        models.ToolCategories.findAll({where: {SquadId: req.squadId}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]}).then((squadCategories) => {
-            if(squadCategories) {
+        models.ToolCategories.findAll({
+            where: {SquadId: req.squadId},
+            include: ['tools'],
+            order: [['order', 'ASC'], ['tools', 'order', 'ASC']]
+        }).then((squadCategories) => {
+            if (squadCategories) {
                 squadCategories.forEach((squadCategory) => {
                     categories.push({
                         id: squadCategory.id,
@@ -274,9 +314,13 @@ var self = {
                     });
                 })
             }
-            return models.ToolCategories.findAll({where: {UserId: req.user.id}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]})
+            return models.ToolCategories.findAll({
+                where: {UserId: req.user.id},
+                include: ['tools'],
+                order: [['order', 'ASC'], ['tools', 'order', 'ASC']]
+            })
         }).then((userCategories) => {
-            if(userCategories) {
+            if (userCategories) {
                 userCategories.forEach((userCategory) => {
                     categories.push({
                         id: userCategory.id,
