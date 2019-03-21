@@ -143,7 +143,63 @@ const self = {
         module.DashboardId = dbDashboard.id;
         module.order = dbDashboard.modules.length;
         module.save().then((module) => {
-            res.json({module});
+            return dashboardModuleService.loadModuleStats(req.user, module);
+        }).then(() => {
+            res.json({module: {
+                id: module.id,
+                order: module.order,
+                properties: module.properties,
+                title: module.title,
+                type: module.type,
+                stats: module.stats,
+                width: module.width,
+            }});
+        }).catch((err) => {
+            console.log(err);
+            res.sendStatus(400);
+        });
+    },
+    updateModule: async (req, res, next) => {
+        let {body: {module}} = req;
+        const {params: {moduleId}} = req;
+        let dbModule;
+        try {
+            dbModule = await models.DashboardModules.findOne({where: {id: moduleId}, include: ['dashboard']});
+        } catch (err) {
+            return res.sendStatus(400);
+        }
+        if (!dbModule) {
+            return res.sendStatus(404);
+        }
+        if (dbModule.dashboard.ProductId) {
+            if (!UserRole.isSuperAdmin(req.user)) {
+                return res.sendStatus(403);
+            }
+        } else if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: dbModule.dashboard.SquadId,
+                role: 'ADMIN'
+            }
+        }))) {
+            return res.sendStatus(403);
+        }
+        dbModule.updateFromEntity(module);
+        if (dbModule.validateProperties() !== null) {
+            return res.json({modules: dbModule.validateProperties().error});
+        }
+        dbModule.save().then((dbModule) => {
+            return dashboardModuleService.loadModuleStats(req.user, dbModule);
+        }).then(() => {
+            res.json({module: {
+                id: dbModule.id,
+                order: dbModule.order,
+                properties: dbModule.properties,
+                title: dbModule.title,
+                type: dbModule.type,
+                stats: dbModule.stats,
+                width: dbModule.width,
+            }});
         }).catch((err) => {
             console.log(err);
             res.sendStatus(400);
@@ -220,7 +276,11 @@ const self = {
         const {params: {id}} = req;
         let dashboard;
         try {
-            dashboard = await models.Dashboards.findOne({where: {publicId: id}, include: ['modules']});
+            dashboard = await models.Dashboards.findOne({
+                where: {publicId: id},
+                include: ['modules'],
+                order: [['modules', 'order', 'ASC']]
+            });
         } catch (err) {
             return res.sendStatus(400);
         }
@@ -264,7 +324,11 @@ const self = {
     },
     getMyDashboard: async (req, res, next) => {
         const {params: {id}} = req;
-        let dashboard = await models.Dashboards.findOne({where: {SquadId: req.squadId}, include: ['modules']});
+        let dashboard = await models.Dashboards.findOne({
+            where: {SquadId: req.squadId},
+            include: ['modules'],
+            order: [['modules', 'order', 'ASC']]
+        });
         if (!dashboard) {
             return res.sendStatus(404);
         }

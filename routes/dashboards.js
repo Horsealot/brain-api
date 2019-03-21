@@ -33,6 +33,13 @@ module.exports = (router) => {
     });
 
     /**
+     * Update a module of a dashboard
+     */
+    router.post('/dashboards/:id/module/:moduleId', auth.required, auth.loadUser, (req, res, next) => {
+        dashboardcontroller.updateModule(req, res, next);
+    });
+
+    /**
      * Delete a dashboard
      */
     router.delete('/dashboards/:id', auth.required, auth.loadUser, (req, res, next) => {
