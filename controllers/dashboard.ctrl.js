@@ -307,12 +307,12 @@ const self = {
         let moduleLoaders = [];
         dashboard = dashboard.toJSON();
         dashboard.id = dashboard.publicId;
-        let dashboardModules = [];
         dashboard.modules.forEach((module) => {
             moduleLoaders.push((callback) => {
-                dashboardModuleService.loadModuleStats(req.user, module).then((module) => {
-                    // console.log(module);
-                    // dashboardModules.push(module);
+                dashboardModuleService.loadModuleStats(req.user, module).then(() => {
+                    callback();
+                }).catch((err) => {
+                    console.log(err);
                     callback();
                 })
             })
