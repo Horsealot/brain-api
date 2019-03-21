@@ -4,7 +4,7 @@ const async = require('async');
 // mongoose.connect(`${config.get('db.host')}/${config.get('db.db_name')}`, { useNewUrlParser: true });
 // console.log(`Connecting to ${config.get('db.host')}/${config.get('db.db_name')}`);
 
-var models = require('./../models');
+const models = require('./../models');
 
 const baseUsers = [
     {
@@ -42,7 +42,7 @@ const baseUsers = [
         password: 'corentin',
         roles: ['USER']
     }
-]
+];
 
 
 
@@ -53,7 +53,7 @@ processPromises.push((callback) => {
     horsealotSquad.save().then(() => {
         callback();
     })
-})
+});
 
 for (let i = 0; i < baseUsers.length; i++) {
     const user = baseUsers[i];

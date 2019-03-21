@@ -1,5 +1,9 @@
 'use strict';
 
+const EDITABLE = [
+    "type", "title", "properties", "width"
+];
+
 module.exports = (sequelize, DataTypes) => {
     const DashboardModules = sequelize.define('DashboardModules', {
         type: {
@@ -16,6 +20,24 @@ module.exports = (sequelize, DataTypes) => {
 
     DashboardModules.associate = function(models) {
         // associations can be defined here
+    };
+
+    DashboardModules.prototype.updateFromEntity = function(newModule) {
+        const updateStatus = Object.assign({}, newModule);
+        for(let key in newModule) {
+            const upperCaseKey = key.replace(/^\w/, c => c.toUpperCase());
+            if(EDITABLE.indexOf(key) >= 0) {
+                if(typeof this["set" + upperCaseKey] === 'function') {
+                    this["set" + upperCaseKey](newModule[key]);
+                } else {
+                    this[key] = newModule[key];
+                }
+                updateStatus[key] = "updated";
+            } else {
+                updateStatus[key] = "not allowed";
+            }
+        }
+        return updateStatus;
     };
 
     DashboardModules.prototype.validateProperties = function() {

@@ -1,5 +1,5 @@
 const fftService = require("../services/fft.service");
-var self = {
+const self = {
     get: async (req, res, next) => {
         fftService.getMedias().then((messages) => {
             res.json({messages});

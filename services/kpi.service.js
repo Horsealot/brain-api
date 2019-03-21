@@ -5,7 +5,7 @@ module.exports = {
     getKpis: async (user) => {
         const instance = axios.create({
             baseURL: config.get('kpi-board.host'),
-            timeout: 2000,
+            timeout: 4000,
             headers: {'Authorization': 'Bearer ' + user.generateMicroserviceJWT()}
         });
         return (await instance.get(config.get('kpi-board.host') + '/kpis')).data.kpis;
@@ -13,7 +13,7 @@ module.exports = {
     getKpi: async (user, kpiId, options = {}) => {
         const instance = axios.create({
             baseURL: config.get('kpi-board.host'),
-            timeout: 2000,
+            timeout: 4000,
             headers: {'Authorization': 'Bearer ' + user.generateMicroserviceJWT()}
         });
         return (await instance.get(config.get('kpi-board.host') + '/kpis/' + kpiId, options)).data;
@@ -45,11 +45,11 @@ module.exports = {
     buildParametersForChart: () => {
         let startDate = new Date();
         const endDate = new Date();
-        startDate.setDate(startDate.getDate() - 365);
+        startDate.setDate(startDate.getDate() - 30);
         return {
             params: {
                 q: 'startDate=' + startDate.toISOString() + ',endDate=' + endDate.toISOString()
             }
         }
     }
-}
+};

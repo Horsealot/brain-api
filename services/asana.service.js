@@ -1,5 +1,5 @@
 const Asana = require('asana');
-const config = require('config')
+const config = require('config');
 const client = Asana.Client.create().useAccessToken(config.get('asana.access_token'));
 
 const self = {

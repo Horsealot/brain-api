@@ -34,7 +34,7 @@ module.exports = {
             if(existingUserSquad) {
                 return res.status(409).json({
                     errors: "User already in the squad"
-                });;
+                });
             }
             existingUser.addSquad(squad, {through: {role: 'USER'}});
 

@@ -1,6 +1,6 @@
-var amqp = require('amqplib/callback_api');
-var amqpConn = null;
-var config = require('config');
+const amqp = require('amqplib/callback_api');
+let amqpConn = null;
+const config = require('config');
 
 function connectRabbitMq() {
     amqp.connect(config.get('rabbitmq.host') + "?heartbeat=60", function(err, conn) {

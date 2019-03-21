@@ -30,4 +30,4 @@ module.exports = {
             return models.Periods.destroy({where: {}});
         });
     }
-}
+};

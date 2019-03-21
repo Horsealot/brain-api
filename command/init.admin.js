@@ -10,7 +10,7 @@ const crypto = require('crypto');
 // const UsersModel = mongoose.model('Users');
 
 
-var models = require('./../models');
+const models = require('./../models');
 
 // Find if already existing
 models.Users.findOne({where: {email: 'tech@horsealot.com'}}).then((existingAdmin) => {

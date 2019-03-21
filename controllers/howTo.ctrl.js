@@ -1,7 +1,7 @@
 const models = require('./../models');
 const UserRole = require("../old_models/mongoose/UserRole");
 
-var self = {
+const self = {
     postHowTo: async (req, res, next) => {
         const {body: {howTo}} = req;
         if (!howTo || !howTo.content) {
@@ -14,21 +14,30 @@ var self = {
 
         let dbHowTo = new models.HowTos(howTo);
         if (howTo.squadId) {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: howTo.squadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: howTo.squadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
-            if(!(await models.Squads.findOne({where: {id: howTo.squadId}}))) {
+            if (!(await models.Squads.findOne({where: {id: howTo.squadId}}))) {
                 return res.sendStatus(404);
             }
             dbHowTo.SquadId = howTo.squadId;
-        } else if(UserRole.isSuperAdmin(req.user)){
+        } else if (UserRole.isSuperAdmin(req.user)) {
             dbHowTo.SquadId = null;
             howTo.squadId = null;
         } else {
             return res.sendStatus(403);
         }
 
-        const previousHowTo = await models.HowTos.findOne({where: {SquadId: howTo.squadId}, order: [['version', 'DESC']]});
+        const previousHowTo = await models.HowTos.findOne({
+            where: {SquadId: howTo.squadId},
+            order: [['version', 'DESC']]
+        });
         dbHowTo.version = previousHowTo ? (previousHowTo.version + 1) : 1;
         dbHowTo.author = req.user.id;
 
@@ -41,14 +50,20 @@ var self = {
     deleteHowTo: async (req, res, next) => {
         const {params: {id}} = req;
         const howTo = await models.HowTos.findOne({where: {id: id}});
-        if(!howTo) {
+        if (!howTo) {
             return res.sendStatus(404);
         }
         if (howTo.SquadId) {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: howTo.SquadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: howTo.SquadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
-        } else if(!UserRole.isSuperAdmin(req.user)){
+        } else if (!UserRole.isSuperAdmin(req.user)) {
             return res.sendStatus(403);
         }
 
@@ -62,7 +77,12 @@ var self = {
         if (!req.squadId) {
             return res.sendStatus(403);
         }
-        if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: req.squadId}}))) {
+        if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+            where: {
+                UserId: req.user.id,
+                SquadId: req.squadId
+            }
+        }))) {
             return res.sendStatus(403);
         }
 

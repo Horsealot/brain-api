@@ -64,7 +64,7 @@ UsersSchema.methods.rmRole = function(role) {
 UsersSchema.methods.setSocialMedias = function(socialMedias) {
     if(Array.isArray(socialMedias)) {
         this.socialMedias = [];
-        for(var i = 0; i < socialMedias.length; i++) {
+        for(let i = 0; i < socialMedias.length; i++) {
             if(validateSocialMedia(socialMedias[i])) {
                 this.socialMedias.push(socialMedias[i]);
             }

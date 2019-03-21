@@ -81,7 +81,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user1.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user1.save();
             }).then((user1) => {
                 chai.request(server)
@@ -103,7 +103,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user1.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user1.save();
             }).then((user1) => {
                 chai.request(server)
@@ -136,7 +136,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'USER'}})
+                user1.addSquad(squad1, {through: {role: 'USER'}});
                 return user1.save();
             }).then((user1) => {
                 chai.request(server)
@@ -353,7 +353,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user1.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.ProductId = product.id;
@@ -381,7 +381,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user1.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.SquadId = squad1.id;
@@ -419,7 +419,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'USER'}})
+                user1.addSquad(squad1, {through: {role: 'USER'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.SquadId = squad1.id;
@@ -457,7 +457,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'USER'}})
+                user1.addSquad(squad1, {through: {role: 'USER'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.SquadId = squad1.id;
@@ -556,7 +556,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user1.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.SquadId = squad1.id;
@@ -587,7 +587,7 @@ describe('Dashboards', () => {
             user1.save().then((user1) => {
                 return squad1.save();
             }).then((squad1) => {
-                user1.addSquad(squad1, {through: {role: 'USER'}})
+                user1.addSquad(squad1, {through: {role: 'USER'}});
                 return user1.save();
             }).then((user1) => {
                 dashboard.SquadId = squad1.id;

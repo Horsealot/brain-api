@@ -1,7 +1,7 @@
 const models = require('./../models');
 const UserRole = require("../old_models/mongoose/UserRole");
 
-var self = {
+const self = {
     postCategory: async (req, res, next) => {
         const {body: {category}} = req;
         if (!category || !category.name) {
@@ -13,16 +13,22 @@ var self = {
         }
         let dbCategory = new models.ToolCategories(category);
         if (category.squadId) {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: category.squadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: category.squadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
-            if(!(await models.Squads.findOne({where: {id: category.squadId}}))) {
+            if (!(await models.Squads.findOne({where: {id: category.squadId}}))) {
                 return res.sendStatus(404);
             }
             dbCategory.SquadId = category.squadId;
             dbCategory.UserId = null;
         } else {
-            if(dbCategory.UserId && dbCategory.UserId !== req.user.id) {
+            if (dbCategory.UserId && dbCategory.UserId !== req.user.id) {
                 return res.sendStatus(403);
             }
             dbCategory.UserId = req.user.id;
@@ -39,22 +45,28 @@ var self = {
         const {body: {category}} = req;
         const {params: {id}} = req;
         let dbCategory = await models.ToolCategories.findOne({where: {id: id}});
-        if(!dbCategory) {
+        if (!dbCategory) {
             return res.sendStatus(404);
         }
         if (dbCategory.SquadId) {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbCategory.SquadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: dbCategory.SquadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
-            if(!(await models.Squads.findOne({where: {id: dbCategory.SquadId}}))) {
+            if (!(await models.Squads.findOne({where: {id: dbCategory.SquadId}}))) {
                 return res.sendStatus(404);
             }
-            if(category.squadId && (await models.Squads.findOne({where: {id: category.SquadId}}))) {
+            if (category.squadId && (await models.Squads.findOne({where: {id: category.SquadId}}))) {
                 dbCategory.SquadId = category.squadId;
             }
             dbCategory.UserId = null;
         } else {
-            if(dbCategory.UserId && dbCategory.UserId !== req.user.id) {
+            if (dbCategory.UserId && dbCategory.UserId !== req.user.id) {
                 return res.sendStatus(403);
             }
             dbCategory.UserId = req.user.id;
@@ -72,18 +84,24 @@ var self = {
     deleteCategory: async (req, res, next) => {
         const {params: {id}} = req;
         let dbCategory = await models.ToolCategories.findOne({where: {id: id}, include: ['tools']});
-        if(!dbCategory) {
+        if (!dbCategory) {
             return res.sendStatus(404);
         }
         if (dbCategory.SquadId) {
-            if(!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({where: {UserId: req.user.id, SquadId: dbCategory.SquadId, role: 'ADMIN'}}))) {
+            if (!UserRole.isSuperAdmin(req.user) && !(await models.UserSquads.findOne({
+                where: {
+                    UserId: req.user.id,
+                    SquadId: dbCategory.SquadId,
+                    role: 'ADMIN'
+                }
+            }))) {
                 return res.sendStatus(403);
             }
-            if(!(await models.Squads.findOne({where: {id: dbCategory.SquadId}}))) {
+            if (!(await models.Squads.findOne({where: {id: dbCategory.SquadId}}))) {
                 return res.sendStatus(404);
             }
         } else {
-            if(dbCategory.UserId && dbCategory.UserId !== req.user.id) {
+            if (dbCategory.UserId && dbCategory.UserId !== req.user.id) {
                 return res.sendStatus(403);
             }
         }
@@ -96,12 +114,16 @@ var self = {
         });
     },
     getTools: (req, res, next) => {
-        if(!req.squadId) {
+        if (!req.squadId) {
             return res.sendStatus(403);
         }
         let categories = [];
-        models.ToolCategories.findAll({where: {SquadId: req.squadId}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]}).then((squadCategories) => {
-            if(squadCategories) {
+        models.ToolCategories.findAll({
+            where: {SquadId: req.squadId},
+            include: ['tools'],
+            order: [['order', 'ASC'], ['tools', 'order', 'ASC']]
+        }).then((squadCategories) => {
+            if (squadCategories) {
                 squadCategories.forEach((squadCategory) => {
                     categories.push({
                         id: squadCategory.id,
@@ -118,9 +140,13 @@ var self = {
                     });
                 })
             }
-            return models.ToolCategories.findAll({where: {UserId: req.user.id}, include: ['tools'], order: [['order', 'ASC'], ['tools', 'order', 'ASC']]})
+            return models.ToolCategories.findAll({
+                where: {UserId: req.user.id},
+                include: ['tools'],
+                order: [['order', 'ASC'], ['tools', 'order', 'ASC']]
+            })
         }).then((userCategories) => {
-            if(userCategories) {
+            if (userCategories) {
                 userCategories.forEach((userCategory) => {
                     categories.push({
                         id: userCategory.id,
@@ -182,7 +208,7 @@ var self = {
         const {body: {tool}} = req;
         const {params: {id}} = req;
         let dbTool = await models.Tools.findOne({where: {id: id}, include: ['category']});
-        if(!dbTool) {
+        if (!dbTool) {
             return res.sendStatus(404);
         }
 
@@ -217,7 +243,7 @@ var self = {
     deleteTool: async (req, res, next) => {
         const {params: {id}} = req;
         let dbTool = await models.Tools.findOne({where: {id: id}, include: ['category']});
-        if(!dbTool) {
+        if (!dbTool) {
             return res.sendStatus(404);
         }
 

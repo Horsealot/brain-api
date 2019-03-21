@@ -179,7 +179,7 @@ describe('Squad', () => {
             }).then((squad1) => {
                 return squad2.save();
             }).then((squad2) => {
-                user.addSquad(squad2, {through: {role: 'ADMIN'}})
+                user.addSquad(squad2, {through: {role: 'ADMIN'}});
                 return user.save();
             }).then((user) => {
                 chai.request(server)
@@ -270,7 +270,7 @@ describe('Squad', () => {
             }).then((squad2) => {
                 return squad1.save();
             }).then((squad1) => {
-                user.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user.save();
             }).then((user) => {
                 chai.request(server)
@@ -304,7 +304,7 @@ describe('Squad', () => {
             user.save().then((user) => {
                 return squad1.save();
             }).then((squad1) => {
-                user.addSquad(squad1, {through: {role: 'ADMIN'}})
+                user.addSquad(squad1, {through: {role: 'ADMIN'}});
                 return user.save();
             }).then((user) => {
                 chai.request(server)

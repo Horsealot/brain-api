@@ -16,13 +16,11 @@ const SocialMedias = new Schema({
 });
 
 const validateSocialMedia = function(socialMedia) {
-    if(allowedSocialMedias.indexOf(socialMedia) < 0) {
-        return true;
-    }
-    return false;
+    return allowedSocialMedias.indexOf(socialMedia) < 0;
+
 };
 
 module.exports = {
     SocialMedias,
     validateSocialMedia
-}
+};
